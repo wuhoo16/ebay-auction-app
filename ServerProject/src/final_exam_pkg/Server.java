@@ -9,6 +9,7 @@ package final_exam_pkg;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -144,6 +145,14 @@ class Server extends Observable {
 		  				handlerToRemove = observer;
 		  			}
 		  		}
+				try {
+					handlerToRemove.toClient.flush();
+					handlerToRemove.fromClient.close();
+					handlerToRemove.clientSocket.close();
+				} catch (IOException e) {
+					System.out.println("closing client socket threw IOException.");
+					e.printStackTrace();
+				}
 		  		this.deleteObserver(handlerToRemove);
 		  		observerList.remove(handlerToRemove);
 		  		numClients--;

@@ -8,15 +8,7 @@
 package final_exam_pkg;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Scanner;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
@@ -31,7 +23,6 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
@@ -47,8 +38,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Pair;
@@ -56,19 +45,22 @@ import javafx.util.Pair;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Client extends Application {
-	private static String host = "127.0.0.1"; // default local host
+	private static final double MAX_WIDTH = Screen.getPrimary().getBounds().getMaxX();
+	private static final double MAX_HEIGHT = Screen.getPrimary().getBounds().getMaxY();
+	private static String host;
 	private static Socket socket;
 	private static BufferedReader fromServer;
 	private static PrintWriter toServer;
+	
 //	private Scanner consoleInput = new Scanner(System.in);
-	private static Queue<String> commandBuffer = new LinkedList<String>();
-	private static boolean isFirstClickOfLoginField = true;
-	private static boolean isFirstClickOfPasswordField = true;
+//	private static Queue<String> commandBuffer = new LinkedList<String>();
+//	private static boolean isFirstClickOfLoginField = true;
+//	private static boolean isFirstClickOfPasswordField = true;
+	private static boolean isIPFieldCleared = false;
 	private static String username = null;
 	static class Item {
 		public String name;
@@ -105,17 +97,35 @@ public class Client extends Application {
 		
 	}
 	private static ArrayList<Item> itemList = new ArrayList<Item> ();
-	private static boolean isItemListInitialized = false;
-	private static boolean isItemListChanged = false;
-	private static ObservableList<Item> observableItemList;
+//	private static boolean isItemListInitialized = false;
+//	private static ObservableList<Item> observableItemList;
 	private static ArrayList<String> itemNamesList = new ArrayList<String> ();
 	private static HashSet<String> watchlistItems = new HashSet<String>();
 	private static ArrayList<Pair<String,Label>> watchlistInfoNodes = new ArrayList<Pair<String,Label>>();
+	private static boolean isItemListUpdated = false;
+	private static boolean sessionDone = false;
+	private static ArrayList<Thread> activeThreadList = new ArrayList<Thread>();
 	
+	// resets all of the Client class's data members before returning to the login scene
+	private static void resetAllVariables() {
+		isIPFieldCleared = false;
+		username = null;
+		itemList = new ArrayList<Item> ();
+		itemNamesList = new ArrayList<String> ();
+		watchlistItems = new HashSet<String>();
+		watchlistInfoNodes  = new ArrayList<Pair<String,Label>>();
+		isItemListUpdated = false;
+		sessionDone = false;
+		activeThreadList  = new ArrayList<Thread>();
+	}
+	
+	
+	// default constructor (may not be called)
 	public Client() {
 		host = "127.0.0.1"; // default local host // TODO: later change to init. dynamically based on text input from login menu
 //		consoleInput = new Scanner(System.in); // TODO: input will not be from console, change to get from GUI buttons
 	}
+	
   
 	@Override
 	public void start(Stage primaryStage) {
@@ -128,52 +138,72 @@ public class Client extends Application {
 //			e.printStackTrace();
 //		}
 		
-		
-		// LOGIN SCREEN SECTION BELOW
-		// The nodes are organized on a borderpane, where the top is set to the welcomeBox and center is set to credentialsBox
-		//========================================================================================================================
+		// Generate initial login scene and place on the primary stage
+		primaryStage.setTitle("Auction Login Page"); // Set the stage title 
+		primaryStage.setScene(generateNewLoginScene(primaryStage)); // Place the scene in the stage
+		primaryStage.setMaximized(true);
+		primaryStage.show(); // Display the stage 
+	}
+	
+	
+	// helper function that returns regular expression needed to create the ip field text formatter
+    private static String getRegEx() {
+        String firstBlock = "(([01]?[0-9]{0,2})|(2[0-4][0-9])|(25[0-5]))" ;
+        String nextBlock = "(\\." + firstBlock+")" ;
+        String ipAddress = firstBlock+ "?" + nextBlock + "{0,3}";
+        return "^" + ipAddress;
+    }
+	
+    
+	// LOGIN PAGE SCENE BELOW
+	// This method will initialize and return a new login scene
+	private static Scene generateNewLoginScene(Stage primaryStage) {
 		BorderPane loginPane = new BorderPane();
+			
+		// borderPane RIGHT nodes
+		Button quitButton = new Button("Quit"); // quit button node
+		quitButton.setPrefSize(70,  30);
+		quitButton.setStyle("-fx-text-fill: red; font-weight: bold; -fx-font-size: 16px");
+		loginPane.setRight(quitButton);
+		BorderPane.setMargin(quitButton,  new Insets(10, 10, 0, 0));
 		
-		// Initialize nodes for top of loginPage borderPane
+		
+		// borderPane CENTER-TOP nodes
 		Label greeting = new Label();
 		Label signIn = new Label();
 		greeting.setText("Welcome to Ebae!");
 		greeting.setFont(new Font("Segoe UI Bold", 24));
-//		greeting.setAlignment(Pos.BASELINE_LEFT); 
 		signIn.setText("Sign in to continue:");
 		signIn.setFont(new Font("Segoe UI", 16));
-//		signIn.setAlignment(Pos.BASELINE_LEFT); 
 		VBox welcomeBox = new VBox(2, greeting, signIn);
 		welcomeBox.setAlignment(Pos.CENTER); 
-		loginPane.setTop(welcomeBox);
+		VBox.setMargin(greeting,  new Insets(10, 0, 0, 0));
 		
-		// Initialize nodes for center of loginPage borderPane
+		
+		// borderPane CENTER nodes
+		TextField hostIPField = new TextField(); // IP field node
+		hostIPField.setText("127.0.0.1"); // set the server ip address to be local machine by default (wipes if user clicks on the field)
+		hostIPField.setStyle("-fx-text-fill: grey; font-style: italic");
+		hostIPField.setFont(new Font("Segoe UI", 12));
+		String regex = getRegEx();
+		final UnaryOperator<TextFormatter.Change> ipFilter = e -> {
+			return (e.getControlNewText().matches(regex) ? e : null);
+		};
+		hostIPField.setOnMousePressed(e -> { // wipes the ip field if user wants to connect to a remote server
+				if (!isIPFieldCleared) {
+					hostIPField.clear();
+					hostIPField.setTextFormatter(new TextFormatter<>(ipFilter));
+					isIPFieldCleared = true;
+				}
+		});
 		TextField loginField = new TextField(); // login field node
-		loginField.setText("Email or username");
+		loginField.setPromptText("Email or username");
 		loginField.setStyle("-fx-text-fill: grey; font-style: italic");
 		loginField.setFont(new Font("Segoe UI", 12));
-		loginField.setOnMousePressed(new EventHandler<MouseEvent>() {
-			@Override
-			public void handle(MouseEvent event) { // wipe the gray text once user clicks login textfield
-				if (isFirstClickOfLoginField) {
-					loginField.clear();
-				}
-				isFirstClickOfLoginField = false;
-			}
-		});
 		TextField passwordField = new TextField(); // password field node
-		passwordField.setText("Password");
+		passwordField.setPromptText("Password");
 		passwordField.setStyle("-fx-text-fill: grey; font-style: italic");
 		passwordField.setFont(new Font("Segoe UI", 12));
-		passwordField.setOnMousePressed(new EventHandler<MouseEvent>() {
-			@Override
-			public void handle(MouseEvent event) { // wipe the gray text once user clicks login textfield
-				if (isFirstClickOfPasswordField) {
-					passwordField.clear();
-				}
-				isFirstClickOfPasswordField = false;
-			}
-		});
 		Button signInButton = new Button("Sign in"); // sign-in button node
 		Label signInErrorMsg = new Label();
 		HBox signInBox = new HBox (10, signInButton, signInErrorMsg);
@@ -183,93 +213,134 @@ public class Client extends Application {
 		signInButton.setAlignment(Pos.CENTER); 
 		signInButton.setOnAction(new EventHandler<ActionEvent>() { 
 			@Override
-			public void handle(ActionEvent event) {
-				username = loginField.getText();
+			public synchronized void handle(ActionEvent event) {
+				String inputUsername = loginField.getText();
 				String password = passwordField.getText();
+				String hostIP = hostIPField.getText();
 
-				if (!username.equals("") && !username.equals("Email or username") && !password.equals("") && !password.equals("Password")) {
-					signInErrorMsg.setText("");
-					primaryStage.setTitle("Ebae Auction Site");
-					primaryStage.setScene(generateAuctionScene()); 
-					primaryStage.setMaximized(true);
-					primaryStage.show(); 
+				if (inputUsername.equals("")) {
+					signInErrorMsg.setText("ERROR! Please enter a username");
+					loginField.setText("");
+					passwordField.setText("");
+					hostIPField.setText("");
 				}
-				else {
-					signInErrorMsg.setText("Error! Please enter a valid username and password");
+				else if (password.equals("")) {
+					signInErrorMsg.setText("ERROR! Please enter a password");
+					loginField.setText("");
+					passwordField.setText("");
+					hostIPField.setText("");
+				}
+				else if (hostIP.contentEquals("")) {
+					signInErrorMsg.setText("ERROR! Please enter a valid host IP address");
+					loginField.setText("");
+					passwordField.setText("");
+					hostIPField.setText("");
+				}
+				else { // none of the blanks are empty		
+					try {
+						signInErrorMsg.setText("");
+			    		setUpSocketConnection(hostIP);
+			    		hostIP = "";
+			    		sendToServer("initializeItemList"); // initialize Item menu as first command
+			    		while (!isItemListUpdated) {System.out.println("Loading items from server database..."); Thread.yield();}
+			    		username = inputUsername;
+			    		primaryStage.setTitle("Auction Site"); 
+						primaryStage.setScene(generateNewAuctionScene(primaryStage)); 
+						primaryStage.show();
+					} catch (Exception e) {
+						System.out.println("ERROR! Exception thrown since Server IP address is invalid.");
+						signInErrorMsg.setText("ERROR! Server refused to connect.");
+						loginField.setText("");
+						passwordField.setText("");
+						hostIPField.setText("");
+					}
 				}
 			}
     	});
 		Button guestButton = new Button("Continue as guest"); // guest button node
 		guestButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
-			public void handle(ActionEvent event) {
-				signInErrorMsg.setText("");
-				username = "Guest";
-				primaryStage.setTitle("Ebae Auction Site");
-				primaryStage.setScene(generateAuctionScene());
-				primaryStage.setMaximized(true);
-				primaryStage.show(); 
+			public synchronized void handle(ActionEvent event) {
+				String inputUsername = loginField.getText();
+				String password = passwordField.getText();
+				String hostIP = hostIPField.getText();
+
+				if (hostIP.contentEquals("")) {
+					signInErrorMsg.setText("ERROR! Please enter a valid host IP address");
+					loginField.setText("");
+					passwordField.setText("");
+					hostIPField.setText("");
+				}
+				else { // ip-field is not empty
+					try {
+						signInErrorMsg.setText("");
+			    		setUpSocketConnection(hostIP);
+			    		hostIP = "";
+			    		sendToServer("initializeItemList"); // initialize Item menu as first command
+			    		while (!isItemListUpdated) {System.out.println("Loading items from server database..."); Thread.yield();}
+			    		username = "Guest";
+			    		primaryStage.setTitle("Auction Site"); 
+						primaryStage.setScene(generateNewAuctionScene(primaryStage)); 
+						primaryStage.show();
+					} catch (Exception e) {
+						System.out.println("ERROR! Exception thrown since Server IP address is invalid.");
+						signInErrorMsg.setText("ERROR! Server refused to connect.");
+						loginField.setText("");
+						passwordField.setText("");
+						hostIPField.setText("");
+					}
+				}
 			}
     	});
-		Button quitButton = new Button("Quit"); // quit button node
-		quitButton.setPrefSize(70,  30);
-		quitButton.setStyle("-fx-text-fill: red; font-weight: bold; -fx-font-size: 16px");
 		quitButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				Client.sendToServer("removeObserver");
-				try {
-					socket.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
 				Platform.exit();
-//				System.exit(0);
+				System.exit(0);
 			}
     	});
-		VBox credentialsBox = new VBox(5, loginField, passwordField, signInBox, guestButton, quitButton);
-		credentialsBox.setMaxSize(375, 900);
-		VBox.setMargin(loginField, new Insets(15, 0, 0, 10));
+		
+		
+		// BorderPane Center Node's Alignment: Login field, password field, sign in button, and guest button
+		VBox centerBox = new VBox(5, welcomeBox, hostIPField, loginField, passwordField, signInBox, guestButton);
+		centerBox.setMaxSize(375, 900);
+		VBox.setMargin(welcomeBox, new Insets(0, 0, 15, 10));
+		VBox.setMargin(hostIPField, new Insets(0, 0, 0, 10));
+		VBox.setMargin(loginField, new Insets(0, 0, 0, 10));
 		VBox.setMargin(passwordField, new Insets(0, 0, 0, 10));
 		VBox.setMargin(signInBox, new Insets(0, 0, 0, 10));
 		VBox.setMargin(guestButton, new Insets(10, 0, 0, 10));
-		VBox.setMargin(quitButton, new Insets(800, 0, 0, 10));
-		loginPane.setCenter(credentialsBox);
+		loginPane.setCenter(centerBox);
 		
-		
-		// Create initial login scene and place on the stage
-		Scene loginScene = new Scene(loginPane, 450, 300);
-		primaryStage.setTitle("Auction Login Page"); // Set the stage title 
-		primaryStage.setScene(loginScene); // Place the scene in the stage
-		primaryStage.setMaximized(true);
-		primaryStage.show(); // Display the stage 
-		
+		Scene loginScene = new Scene(loginPane, MAX_WIDTH, MAX_HEIGHT);
+		return loginScene;
 	}
+	
+	
+	
 	
 	
 	// AUCTION PAGE SCREEN BELOW
 	// This method will generate all the nodes for the auction page and return the populated Scene
 	// Call this right after the user successfully signs-in
-	private static Scene generateAuctionScene() {
-		// Declare nodes for AUCTION PAGE
-		ScrollPane scrollWindow = new ScrollPane(); // watchlist window node
-		ListView<VBox> itemView = new ListView<VBox>();
-		itemView.setMinWidth(1890);
-		itemView.setMaxSize(1890, 750);
+	private static Scene generateNewAuctionScene(Stage primaryStage) {
+		// Welcome Message Row 0 Nodes
+		Label welcomeMessage = new Label("Welcome to the auction, " + Client.username + "!");
+		welcomeMessage.setStyle("-fx-text-fill: blue; font-weight: bold; -fx-font-size: 24pt");
+		Button logOutButton = new Button("Log out");
+		logOutButton.setStyle("-fx-text-fill: red; font-weight: bold; -fx-font-size: 16px");
+		logOutButton.setAlignment(Pos.CENTER_RIGHT);
+		HBox welcomeMessageRow = new HBox(640, welcomeMessage, logOutButton);
+		welcomeMessageRow.setAlignment(Pos.CENTER_RIGHT);
+		HBox.setMargin(logOutButton, new Insets(10, 10, 0, 0));
+		HBox.setMargin(welcomeMessage, new Insets(10, 0, 0, 0));
 		
 		// CONTROLLER ROW 1 NODES
 		ChoiceBox<String> itemMenu = new ChoiceBox<String>(); // item menu node
 		itemMenu.setPrefHeight(35);
-//		while (!isItemListInitialized) { 
-//			try {
-//				Thread.sleep(100);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
+//		for (Item item : itemList) {
+//			itemNamesList.add(item.name);
 //		}
-		for (Item item : itemList) {
-			itemNamesList.add(item.name);
-		}
 		itemMenu.getItems().addAll(itemNamesList);
 		Button addItemButton = new Button("Add this item to watchlist"); 
 		addItemButton.setPrefHeight(35);
@@ -284,6 +355,7 @@ public class Client extends Application {
 		TextField bidField = new TextField();
 		bidField.setPrefHeight(35);
 		Pattern pattern = Pattern.compile("\\d*\\.?\\d{0,2}");
+		@SuppressWarnings("unchecked")
 		TextFormatter formatter = new TextFormatter((UnaryOperator<TextFormatter.Change>) change -> {
 		    return pattern.matcher(change.getControlNewText()).matches() ? change : null;
 		});
@@ -294,73 +366,15 @@ public class Client extends Application {
 		bidErrorMessage.setStyle("-fx-text-fill: red");
 		
 		
-		// ALL BUTTON HANDLERS ARE BELOW:
-		//===================================================================================
-		addItemButton.setOnAction(new EventHandler<ActionEvent>() { // add-item button handler
-			@Override
-			public void handle(ActionEvent event) {
-				String chosenItemName = itemMenu.getValue();
-				if (!watchlistItems.contains(chosenItemName)) { // item has not been added to watchlist yet -> add to watchlist
-					clearErrorMessages(addItemErrorMessage, bidErrorMessage);
-					Item chosenItem = null;
-					for (Item item: itemList) {
-						if (item.name.contentEquals(chosenItemName)) chosenItem = item;
-					}
-					Label itemNameLabel = new Label(chosenItem.name);
-					itemNameLabel.setStyle("-fx-text-fill: black; font-weight: bold; -fx-font-size: 16pt");
-					Label itemDescription = new Label (chosenItem.description);
-					String currentBidPrice = "N/A";
-					if (chosenItem.currentBidPrice != 0.00) {
-						currentBidPrice = new String(); currentBidPrice += "$" + String.valueOf(chosenItem.currentBidPrice);
-					}
-					Label itemInfo = new Label ("Minimum Bidding Price: $" + chosenItem.minPrice + "  Current Bid: " + currentBidPrice + "  Highest Bidder: " + chosenItem.highestBidderUsername + "  Time left: " + chosenItem.duration + " mins");
-					Separator itemDivider = new Separator();
-					VBox itemNode = new VBox(2, itemNameLabel, itemDescription, itemInfo, itemDivider);
-					itemView.getItems().add(itemNode);
-					watchlistItems.add(chosenItemName);
-					watchlistInfoNodes.add(new Pair<String, Label>(chosenItemName, itemInfo));
-//	    			observableItemList.addListener((ListChangeListener<? super Item>) itemNode);
-				}
-				else { // else, item is already in watchlist window
-					addItemErrorMessage.setText("ERROR! " + chosenItemName + " is already added to the watchlist.");
-				}
-			}
-			
-		});
+		// Divider line between controller and watchlist scrollpane
+		Separator divider = new Separator();
 		
-		bidButton.setOnAction(new EventHandler<ActionEvent> () { // palce-bid button handler
-			@Override
-			public void handle(ActionEvent event) {
-					String chosenItemName = itemMenu.getValue();
-					Double userBid = Double.parseDouble(bidField.getText());
-					try {
-						Item chosenItem = null;
-						for (Item item: itemList) {
-							if (item.name.contentEquals(chosenItemName)) chosenItem = item;
-						}
-						if (userBid <= chosenItem.minPrice) { // inputted bid is too low
-							bidErrorMessage.setText("INVALID BID! Your bid must be higher than the minimum bidding price.");
-						}
-						else if (userBid <= chosenItem.currentBidPrice) {
-							bidErrorMessage.setText("INVALID BID! Your bid must be higher than the current bid.");
-						}
-						else if (chosenItem.duration <= 0.00) {
-							bidErrorMessage.setText("INVALID BID! Auction for this item has closed.");
-						}
-						else { // userBid is a valid bid
-							clearErrorMessages(addItemErrorMessage, bidErrorMessage);
-							isItemListChanged = false;
-							sendToServer("updateBidPrice|" + chosenItemName + "|" + String.valueOf(userBid) + "|" + username + "|");
-							bidErrorMessage.setText("BID SUCCESSFUL! You are now the highest bidder.");
-							bidField.clear();
-						}
-					} catch (NullPointerException e) {
-						System.out.println("Null pointer exception!");
-					}
-					
-			}
-		});
 		
+		// Scrollpane + watchlist view nodes
+		ScrollPane scrollWindow = new ScrollPane(); // watchlist window node
+		ListView<VBox> itemView = new ListView<VBox>();
+		itemView.setMinWidth(1890);
+		itemView.setMaxSize(1890, 750);
 		
 		// Final Layout Specification from top to bottom: welcomeMessage, controller, scrollWindow (containing itemView VBox)
 		HBox controllerRow1 = new HBox(5, itemMenu, addItemButton, addItemErrorMessage);  // controller node
@@ -370,11 +384,7 @@ public class Client extends Application {
 		VBox controller = new VBox(5, controllerRow1, controllerRow2); // controller node (with all user interface)
 		scrollWindow.setContent(itemView);
 		scrollWindow.setPannable(true);
-		Label welcomeMessage = new Label("Welcome to the auction, " + Client.username + "!");
-		welcomeMessage.setStyle("-fx-text-fill: blue; font-weight: bold; -fx-font-size: 24pt");
-		welcomeMessage.setTextAlignment(TextAlignment.CENTER);
-		Separator divider = new Separator();
-		VBox grid = new VBox(5, welcomeMessage, controller, divider, scrollWindow);
+		VBox grid = new VBox(5, welcomeMessageRow, controller, divider, scrollWindow);
 		VBox.setMargin(scrollWindow, new Insets(10));
 
 		
@@ -382,7 +392,7 @@ public class Client extends Application {
 		Thread enableButtonThread = new Thread(new Runnable () {
 			@Override
 			public void run() {
-				while (true) { // while the itemView has nodes added to it, keep queuing commands to update the client's itemList
+				while (!sessionDone) { // while the itemView has nodes added to it, keep queuing commands to update the client's itemList
 					if (itemMenu.getValue() == null) {
 						addItemButton.setDisable(true); 
 						bidButton.setDisable(true);
@@ -397,28 +407,28 @@ public class Client extends Application {
 				}
 			}
 		});
-		Thread itemListUpdaterThread = new Thread(new Runnable () {
-			@Override
-			public void run() {
-				while (!itemView.getItems().isEmpty()) { // while the itemView has nodes added to it, keep queuing commands to update the client's itemList
-					sendToServer("updateItemList"); // update once per second
-//					try {
-//						Thread.sleep(1000);
-//					} catch (InterruptedException e) {
-//						e.printStackTrace();
+//		Thread itemListUpdaterThread = new Thread(new Runnable () {
+//			@Override
+//			public void run() {
+//				while (!sessionDone) {
+//					if (!itemView.getItems().isEmpty()) { // while the itemView has nodes added to it, keep queuing commands to update the client's itemList
+//						sendToServer("updateItemList"); // update once per second
+//						try { // let other threads do work for 50 ms before updating this client's list
+//							Thread.sleep(50);
+//						} catch (InterruptedException e) {
+//							e.printStackTrace();
+//						}
 //					}
-				}
-			}
-		});
+//				}
+//			}
+//		});
 		Thread updateWatchlistThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
-				while (true) {
+				while (!sessionDone) {
 					for (Pair<String,Label> nodePair : watchlistInfoNodes) {
 						String itemName = nodePair.getKey();
-						System.out.println(itemName);
 						Label infoNode = nodePair.getValue();
-						System.out.println(infoNode.getText());
 						for (Item item : itemList) {
 							if (itemName.contentEquals(item.name)) {
 								Platform.runLater(() -> {
@@ -427,7 +437,7 @@ public class Client extends Application {
 							}
 						}
 					}
-					try { // let other threads run for 0.5 ms, then update GUI
+					try { // let other threads run for 0.5 ms intervals before updating GUI
 						Thread.sleep(500);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
@@ -436,66 +446,171 @@ public class Client extends Application {
 			}
         });
 		enableButtonThread.start();
-		itemListUpdaterThread.start();
+		enableButtonThread.setName("enableButtonThread");
+		activeThreadList.add(enableButtonThread);
+//		itemListUpdaterThread.start();
+//		itemListUpdaterThread.setName("itemListUpdaterThread");
+//		activeThreadList.add(itemListUpdaterThread);
 		updateWatchlistThread.start();
+		updateWatchlistThread.setName("updateWatchlistThread");
+		activeThreadList.add(updateWatchlistThread);
+		
+		// ALL BUTTON HANDLERS ARE BELOW:
+		//===========================================================================================================
+		addItemButton.setOnAction(e -> { // add-item button handler and use lambda expression instead of EventHandler
+			String chosenItemName = itemMenu.getValue();
+			if (!watchlistItems.contains(chosenItemName)) { // item has not been added to watchlist yet -> add to watchlist
+				clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
+				Item chosenItem = null;
+				for (Item item: itemList) {
+					if (item.name.contentEquals(chosenItemName)) chosenItem = item;
+				}
+				Label itemNameLabel = new Label(chosenItem.name);
+				itemNameLabel.setStyle("-fx-text-fill: black; font-weight: bold; -fx-font-size: 16pt");
+				Label itemDescription = new Label (chosenItem.description);
+				String currentBidPrice = "N/A";
+				if (chosenItem.currentBidPrice != 0.00) {
+					currentBidPrice = new String(); currentBidPrice += "$" + String.valueOf(chosenItem.currentBidPrice);
+				}
+				Label itemInfo = new Label ("Minimum Bidding Price: $" + chosenItem.minPrice + "  Current Bid: " + currentBidPrice + "  Highest Bidder: " + chosenItem.highestBidderUsername + "  Time left: " + chosenItem.duration + " mins");
+				Separator itemDivider = new Separator();
+				VBox itemNode = new VBox(2, itemNameLabel, itemDescription, itemInfo, itemDivider);
+				itemView.getItems().add(itemNode);
+				watchlistItems.add(chosenItemName);
+				watchlistInfoNodes.add(new Pair<String, Label>(chosenItemName, itemInfo));
+//	    		observableItemList.addListener((ListChangeListener<? super Item>) itemNode);
+			}
+			else { // else, item is already in watchlist window
+				addItemErrorMessage.setText("ERROR! " + chosenItemName + " is already added to the watchlist.");
+			}
+		});
+		bidButton.setOnAction(e -> { // palce-bid button handler with lambda expression
+			String chosenItemName = itemMenu.getValue();
+			Double userBid = Double.parseDouble(bidField.getText());
+				Item chosenItem = null;
+				for (Item item: itemList) {
+					if (item.name.contentEquals(chosenItemName)) chosenItem = item;
+				}
+				if (userBid <= chosenItem.minPrice) { // inputted bid is too low
+					bidErrorMessage.setText("INVALID BID! Your bid must be higher than the minimum bidding price.");
+				}
+				else if (userBid <= chosenItem.currentBidPrice) {
+					bidErrorMessage.setText("INVALID BID! Your bid must be higher than the current bid.");
+				}
+				else if (chosenItem.duration <= 0.00) {
+					bidErrorMessage.setText("INVALID BID! Auction for this item has closed.");
+				}
+				else { // userBid is a valid bid
+					clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
+//					isItemListChanged = false;
+					sendToServer("updateBidPrice|" + chosenItemName + "|" + String.valueOf(userBid) + "|" + username + "|");
+					bidErrorMessage.setText("BID SUCCESSFUL! You are now the highest bidder.");
+					bidField.clear();
+				}
+		});
+		logOutButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				// try to set flags so that all the helper threads finish executing
+				sessionDone = true;
+				for (Thread t : activeThreadList) {
+					System.out.println("Thread in Array: " + t.getName());
+				    try {
+						t.join();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				
+				resetAllVariables();
+				try {
+					closeSocketConnection();
+				} catch (IOException e) {
+					System.out.println("IOException when trying to close input/output streams and socket.");
+					e.printStackTrace();
+				}
+				
+				primaryStage.setTitle("Auction Login Page"); // Set the stage title 
+				primaryStage.setScene(generateNewLoginScene(primaryStage)); // Place the scene in the stage
+				primaryStage.show(); // Display the stage 
+			}
+		});
+		
+		
 		
 		
 		// create and return auction Scene
-		Rectangle2D screenBounds = Screen.getPrimary().getBounds();
-		Scene auctionScene = new Scene(grid, screenBounds.getMaxX(), screenBounds.getMaxY());
+		Scene auctionScene = new Scene(grid, MAX_WIDTH, MAX_HEIGHT);
 		return auctionScene;
 	}
 	
 	
 	// helper method that clears all error messages in the auction screen GUI
 	// usage: call this method after every successful user button press
-	private static void clearErrorMessages(Label addItemErrorMessage, Label bidErrorMessage) {
+	private static void clearAuctionErrorMessages(Label addItemErrorMessage, Label bidErrorMessage) {
 		addItemErrorMessage.setText("");
 		bidErrorMessage.setText("");
 	}
 	
   
-	// set up connection to server through socket 4242
-	private static void setUpSocketConnection() throws Exception {
-	    socket = new Socket(host, 4242);
+	// helper method that sets up connection to server through socket 4242, given host IP address
+	// usage: only call this method after successful sign-in button-press
+	private static void setUpSocketConnection(String hostIP) throws Exception {
+	    try {
+	    	socket = new Socket(hostIP, 4242);
+	    } catch (IOException e) {
+	    	System.out.println("Error generating socket to server.");
+	    }
+	    
 	    System.out.println("Connecting to server... " + socket);
 	    toServer = new PrintWriter(socket.getOutputStream());
 	    fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-	
+	    
 	    // readerThread handles all communication from the server
 	    Thread readerThread = new Thread(new Runnable() {
 	    	@Override
 	    	public void run() {
 	    		String input;
 	    		try {
-	    			while (!socket.isClosed() && (input = fromServer.readLine()) != null) {
-	    				System.out.println("From server: " + input);
-	    				processRequest(input);
+	    			while (!sessionDone && !socket.isClosed()) { // original while-loop: ((input = fromServer.readLine()) != null)
+	    				if (fromServer.ready()) {
+	    					input = fromServer.readLine();
+	    					processRequest(input);
+	    				}
 	    			}
 	    		} catch (Exception e) {
+	    			System.out.println("readerThread threw an Exception when getting input from the 'fromServer' stream.");
 	    			e.printStackTrace();
 	    		}
 	    	}
 	    });
-	    // writerThread handles writes all client commands to the server
-	    Thread writerThread = new Thread(new Runnable() {
-	    	@Override
-	        public synchronized void run() {
-	    		while (true) {
-	        	    if (!commandBuffer.isEmpty()) {
-		    			String topCommand = commandBuffer.remove();
-//		            	GsonBuilder builder = new GsonBuilder();
-//		            	Gson gson = builder.create();
-		    			sendToServer(topCommand);
-	        	    }
-	    		}
-	        }
-	    });
-	    readerThread.start();
-	    writerThread.start();
 	    
+	    // writerThread handles writes all client commands to the server
+//	    Thread writerThread = new Thread(new Runnable() {
+//	    	@Override
+//	        public synchronized void run() {
+//	    		while (true) {
+//	        	    if (!commandBuffer.isEmpty()) {
+//		    			String topCommand = commandBuffer.remove();
+////		            	GsonBuilder builder = new GsonBuilder();
+////		            	Gson gson = builder.create();
+//		    			sendToServer(topCommand);
+//	        	    }
+//	    		}
+//	        }
+//	    });
+	    readerThread.start();
+	    readerThread.setName("readerThread");
+	    activeThreadList.add(readerThread);
+//	    writerThread.start();
 	}
+	
+	private static void closeSocketConnection() throws IOException {
+		Client.sendToServer("removeObserver");
 
+	}
+	
 	
 	// format of messages returned from server will be: <command+"Successful">|<inputDataString>
 	// command and each part of data is separated by |
@@ -514,33 +629,33 @@ public class Client extends Application {
 				String highestBidderUsername = "";
 				Double duration = 0.00;
     			for (int i = 1; i < inputArr.length; i++) {
-    				if (i % 6 == 1) {
-    					name += inputArr[i];
-//    					itemNamesList.add(name);
-    				}
-    				else if (i % 6 == 2) {
-    					description += inputArr[i];
-    				}
-    				else if (i % 6 == 3) {
-    					minPrice = Double.parseDouble(inputArr[i]);
-    				}
-    				else if (i % 6 == 4) {
-    					currentBidPrice = Double.parseDouble(inputArr[i]);
-    				}
-    				else if (i % 6 == 5) {
-    					highestBidderUsername = inputArr[i];
-    				}
-    				else {
-    					duration = Double.parseDouble(inputArr[i]);
-    	 				itemList.add(new Item(name, description, minPrice, currentBidPrice, highestBidderUsername, duration));
-    	 				name = "";
-        				description = "";
-        				highestBidderUsername = "";
+    				if (!inputArr[i].contentEquals("")) {
+	    				if (i % 6 == 1) {
+	    					name += inputArr[i];
+	    					itemNamesList.add(name);
+	    				}
+	    				else if (i % 6 == 2) {
+	    					description += inputArr[i];
+	    				}
+	    				else if (i % 6 == 3) {
+	    					minPrice = Double.parseDouble(inputArr[i]);
+	    				}
+	    				else if (i % 6 == 4) {
+	    					currentBidPrice = Double.parseDouble(inputArr[i]);
+	    				}
+	    				else if (i % 6 == 5) {
+	    					highestBidderUsername = inputArr[i];
+	    				}
+	    				else {
+	    					duration = Double.parseDouble(inputArr[i]);
+	    	 				itemList.add(new Item(name, description, minPrice, currentBidPrice, highestBidderUsername, duration));
+	    	 				name = "";
+	        				description = "";
+	        				highestBidderUsername = "";
+	    				}
     				}
     			}
-    			isItemListChanged = true; // set changed flag
-    			isItemListInitialized = true;
-//    			observableItemList = FXCollections.observableList(itemList);
+    			isItemListUpdated = true; // set changed flag
     			break;
     	}//end of switch
     	
@@ -548,22 +663,13 @@ public class Client extends Application {
     }
 
   
-	public static void main(String[] args) {
-		// set up this client's socket connection with server
-		try {
-			Client.setUpSocketConnection();
-			sendToServer("initializeItemList"); // set initialize Item menu as first command
-		} catch (Exception e) {
-			System.out.println("exception when setting up socket connection");
-			e.printStackTrace();
-		}
-		
+	public static void main(String[] args) {	
 		// Launch Java FX Application thread
 		launch(args);
 	}
 	
 	
-    protected static synchronized void sendToServer(String string) {
+    protected static void sendToServer(String string) {
     	System.out.println("Sending to server: " + string);
     	toServer.println(string);
     	toServer.flush();

@@ -23,9 +23,9 @@ import org.json.*;;
 
 class ClientHandler extends Server implements Runnable, Observer {
 	private Server server;
-	private Socket clientSocket;
-	private BufferedReader fromClient;
-	private PrintWriter toClient;
+	protected Socket clientSocket;
+	protected BufferedReader fromClient;
+	protected PrintWriter toClient;
 	protected int clientID = -1;
 
 	// parameterized constructor used to blackbox the communication between server and clients
@@ -57,7 +57,9 @@ class ClientHandler extends Server implements Runnable, Observer {
 				server.processRequest(input);
 			}
 		} catch (IOException e) {
-			System.out.println("Client #" + clientID + " has disconnected from the server.");
+			System.out.println("Client #" + clientID + "'s server-socket input stream broken.");
+		} finally {
+			System.out.println("Client #" + clientID + "'s communication handler thread terminating.");
 		}
 	}
 
