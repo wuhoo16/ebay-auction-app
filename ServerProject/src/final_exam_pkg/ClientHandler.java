@@ -42,7 +42,7 @@ class ClientHandler extends Server implements Runnable, Observer {
 	}
 
 	protected void sendToClient(String string) {
-    	System.out.println("Sending to client #" + clientID + ": " + string);
+    	System.out.println("Sending to client #" + clientID + ": " + string); // uncomment this to see commands sent to clients
     	toClient.println(string);
     	toClient.flush();
 	}
@@ -52,14 +52,14 @@ class ClientHandler extends Server implements Runnable, Observer {
 		String input;
 		try {
 			while ((input = fromClient.readLine()) != null) {
-				System.out.println("From client: " + input);
+//				System.out.println("From client: " + input); // uncomment this to see commands recieved from clients to console
 				if (input.contentEquals("initializeItemList") || input.contentEquals("removeObserver") || input.contentEquals("updateItemList")) { input += " " + clientID;}
 				server.processRequest(input);
 			}
 		} catch (IOException e) {
-			System.out.println("Client #" + clientID + "'s server-socket input stream broken.");
+//			System.out.println("Client #" + clientID + "'s socket has closed and input stream no longer exists");
 		} finally {
-			System.out.println("Client #" + clientID + "'s communication handler thread terminating.");
+			System.out.println("Client #" + clientID + " has disconnected from the server.");
 		}
 	}
 

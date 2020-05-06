@@ -46,11 +46,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.net.Socket;
+import java.text.DecimalFormat;
 
 public class Client extends Application {
 	private static final double MAX_WIDTH = Screen.getPrimary().getBounds().getMaxX();
 	private static final double MAX_HEIGHT = Screen.getPrimary().getBounds().getMaxY();
+	private static final DecimalFormat MONEY_FORMATTER = new DecimalFormat("#.##");
 	private static String host;
 	private static Socket socket;
 	private static BufferedReader fromServer;
@@ -63,36 +66,39 @@ public class Client extends Application {
 	private static boolean isIPFieldCleared = false;
 	private static String username = null;
 	static class Item {
-		public String name;
-		public String description;
-		public double minPrice;
-		public double currentBidPrice;
-		public String highestBidderUsername;
-		public double duration;
-		public boolean isBiddable;
+		private String name;
+		private String description;
+		private double minPrice;
+		private double currentBidPrice;
+		private String highestBidderUsername;
+		private BigDecimal duration;
+		private String soldMessage;
+//		private boolean isBiddable;
 		
-		protected Item (String name, String description, double minPrice, double duration) {
+		private Item (String name, String description, double minPrice, BigDecimal duration) {
 			this.name = name;
 			this.description = description;
 			this.minPrice = minPrice;
 			this.currentBidPrice = 0.00;
 			highestBidderUsername = "N/A";
 			this.duration = duration;
-			if (duration > 0) {
-				isBiddable = true;
-			}
+			soldMessage = "";
+//			if (duration > 0) {
+//				isBiddable = true;
+//			}
 		}
 		// new parameterized constructor
-		protected Item (String name, String description, double minPrice, double currentBidPrice, String highestBidderUsername, double duration) {
+		private Item (String name, String description, double minPrice, double currentBidPrice, String highestBidderUsername, BigDecimal duration) {
 			this.name = name;
 			this.description = description;
 			this.minPrice = minPrice;
 			this.currentBidPrice = currentBidPrice;
 			this.highestBidderUsername = new String(); this.highestBidderUsername += highestBidderUsername;
 			this.duration = duration;
-			if (duration > 0) {
-				isBiddable = true;
-			}
+			soldMessage = "";
+//			if (duration > 0) {
+//				isBiddable = true;
+//			}
 		}
 		
 	}
@@ -431,15 +437,23 @@ public class Client extends Application {
 						Label infoNode = nodePair.getValue();
 						for (Item item : itemList) {
 							if (itemName.contentEquals(item.name)) {
+								BigDecimal bigDecimalDuration = item.duration;
+								int minutes = bigDecimalDuration.intValue();
+								BigDecimal decimalPart = bigDecimalDuration.subtract(new BigDecimal(minutes));
+								int seconds = (decimalPart.multiply((new BigDecimal(60)))).intValue();
+								String minutesString = String.format("%02d", minutes);
+								String secondsString = String.format("%02d", seconds);
+								String timeLeft = minutesString + ":" + secondsString;
 								Platform.runLater(() -> {
-									infoNode.setText("Minimum Bidding Price: $" + item.minPrice + "  Current Bid: $" + item.currentBidPrice + "  Highest Bidder: " + item.highestBidderUsername +  "  Time left: " + item.duration + " mins");
+									infoNode.setText("Minimum Bidding Price: $" + item.minPrice + "  Current Bid: $" + MONEY_FORMATTER.format(item.currentBidPrice) + "  Highest Bidder: " + item.highestBidderUsername +  "  Time left: " + timeLeft);
 								});
 							}
 						}
 					}
-					try { // let other threads run for 0.5 ms intervals before updating GUI
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
+					try { // let other threads run for 50 ms intervals before updating GUI
+						Thread.sleep(50);
+					} 
+					catch (InterruptedException e) {
 						e.printStackTrace();
 					}
 				}
@@ -470,9 +484,16 @@ public class Client extends Application {
 				Label itemDescription = new Label (chosenItem.description);
 				String currentBidPrice = "N/A";
 				if (chosenItem.currentBidPrice != 0.00) {
-					currentBidPrice = new String(); currentBidPrice += "$" + String.valueOf(chosenItem.currentBidPrice);
+					currentBidPrice = new String(); currentBidPrice += "$" + MONEY_FORMATTER.format(chosenItem.currentBidPrice);
 				}
-				Label itemInfo = new Label ("Minimum Bidding Price: $" + chosenItem.minPrice + "  Current Bid: " + currentBidPrice + "  Highest Bidder: " + chosenItem.highestBidderUsername + "  Time left: " + chosenItem.duration + " mins");
+				BigDecimal bigDecimal = chosenItem.duration;
+				int minutes = bigDecimal.intValue();
+				BigDecimal decimalPart = bigDecimal.subtract(new BigDecimal(minutes));
+				int seconds = (decimalPart.multiply((new BigDecimal(60)))).intValue();
+				String minutesString = String.format("%02d", minutes);
+				String secondsString = String.format("%02d", seconds);
+				String initialTimeLeft = minutesString + ":" + secondsString;
+				Label itemInfo = new Label ("Minimum Bidding Price: $" + chosenItem.minPrice + "  Current Bid: " + currentBidPrice + "  Highest Bidder: " + chosenItem.highestBidderUsername + "  Time left: " + initialTimeLeft);
 				Separator itemDivider = new Separator();
 				VBox itemNode = new VBox(2, itemNameLabel, itemDescription, itemInfo, itemDivider);
 				itemView.getItems().add(itemNode);
@@ -497,13 +518,13 @@ public class Client extends Application {
 				else if (userBid <= chosenItem.currentBidPrice) {
 					bidErrorMessage.setText("INVALID BID! Your bid must be higher than the current bid.");
 				}
-				else if (chosenItem.duration <= 0.00) {
+				else if (chosenItem.duration.doubleValue() <= 0.00) {
 					bidErrorMessage.setText("INVALID BID! Auction for this item has closed.");
 				}
 				else { // userBid is a valid bid
 					clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
 //					isItemListChanged = false;
-					sendToServer("updateBidPrice|" + chosenItemName + "|" + String.valueOf(userBid) + "|" + username + "|");
+					sendToServer("updateBidPrice|" + chosenItemName + "|" + String.valueOf(userBid) + "|" + username);
 					bidErrorMessage.setText("BID SUCCESSFUL! You are now the highest bidder.");
 					bidField.clear();
 				}
@@ -576,6 +597,7 @@ public class Client extends Application {
 	    			while (!sessionDone && !socket.isClosed()) { // original while-loop: ((input = fromServer.readLine()) != null)
 	    				if (fromServer.ready()) {
 	    					input = fromServer.readLine();
+//	    					System.out.println("readerThread got following command from server: " + input); // uncomment this line to see commands recieved from server
 	    					processRequest(input);
 	    				}
 	    			}
@@ -620,14 +642,13 @@ public class Client extends Application {
     	// TODO: use inputArr[0] to decide how to use the information from the server below:
     	switch (inputArr[0]) {
     		case "initializeItemListSuccessful":
-    		case "updateItemListSuccessful":
     			itemList.clear();
  				String name = "";
 				String description = "";
 				Double minPrice = 0.00;
 				Double currentBidPrice = 0.00;
 				String highestBidderUsername = "";
-				Double duration = 0.00;
+				BigDecimal duration;
     			for (int i = 1; i < inputArr.length; i++) {
     				if (!inputArr[i].contentEquals("")) {
 	    				if (i % 6 == 1) {
@@ -647,7 +668,7 @@ public class Client extends Application {
 	    					highestBidderUsername = inputArr[i];
 	    				}
 	    				else {
-	    					duration = Double.parseDouble(inputArr[i]);
+	    					duration = new BigDecimal(inputArr[i]);
 	    	 				itemList.add(new Item(name, description, minPrice, currentBidPrice, highestBidderUsername, duration));
 	    	 				name = "";
 	        				description = "";
@@ -657,6 +678,40 @@ public class Client extends Application {
     			}
     			isItemListUpdated = true; // set changed flag
     			break;
+    		case "updateBidPriceSuccessful": // server message in the form: updateBidPriceSuccessful|<itemName>|<newBidPrice>|<newHighestBidderUsername>
+    			String itemNameToUpdate = inputArr[1];
+    			Double newCurrentBidPrice = Double.parseDouble(inputArr[2]);
+    			String newHighestBidderUsername = inputArr[3];
+    			for (Item item : itemList) {
+    				if (item.name.contentEquals(itemNameToUpdate)) {
+    					item.currentBidPrice = newCurrentBidPrice;
+    					item.highestBidderUsername = newHighestBidderUsername;
+    					break;
+    				}
+    			}
+    			break;
+    		case "updateDurationSuccessful": // server message in the form: notifyItemSoldSuccessful|<itemName>|<newDuration>
+    			String itemName = inputArr[1];
+    			BigDecimal newDuration = new BigDecimal(inputArr[2]);
+    			for (Item item : itemList) {
+    				if (item.name.contentEquals(itemName)) {
+    					item.duration = newDuration;
+    					break;
+    				}
+    			}
+    			break;
+    		case "notifyItemSoldSuccessful": // server message in the form: notifyItemSoldSuccessful|<itemName>|<soldMessage>
+    			String itemNameToNotify = inputArr[1];
+    			String soldMessage = inputArr[2];
+    			for (Item item : itemList) {
+    				if (item.name.contentEquals(itemNameToNotify)) {
+    					item.soldMessage = soldMessage;
+        				break;
+    				}
+    			}
+    			// TODO: ADD soldMessage to a queue to be updated by a new thread that periodically writes messages to a live alert console
+    			break;
+    		
     	}//end of switch
     	
     	return;
