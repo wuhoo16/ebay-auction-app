@@ -43,7 +43,7 @@ class Server extends Observable {
 			this.currentBidPrice = 0.00;
 			this.highestBidderUsername = "N/A";
 			this.duration = duration; // this will be the duration in minutes
-			this.soldMessage = "";
+			this.soldMessage = "Item is up for sale!";
 //			if (duration > 0) {
 //				isBiddable = true;
 //			}
@@ -96,17 +96,19 @@ class Server extends Observable {
 		Timer serverTimer = new Timer();
 		serverTimer.scheduleAtFixedRate(new TimerTask() {
 			public void run() {
-				for (Item item : activeItemList) {
-					if (item.duration.compareTo(ONE_SECOND) == 1) { // if duration remaining > 1 second
-						item.duration = item.duration.subtract(ONE_SECOND); // equivalent to 1 second
-				  		serverObject.setChanged();
-				  		serverObject.notifyObservers("updateDurationSuccessful|" + item.name + "|" + item.duration);
-					}
-					else {
-						item.duration = BigDecimal.ZERO;
-						expiredItemQueue.add(item);
-				  		serverObject.setChanged();
-				  		serverObject.notifyObservers("updateDurationSuccessful|" + item.name + "|" + item.duration);
+				synchronized(activeItemListLock) {
+					for (Item item : activeItemList) {
+						if (item.duration.compareTo(ONE_SECOND) == 1) { // if duration remaining > 1 second
+							item.duration = item.duration.subtract(ONE_SECOND); // equivalent to 1 second
+					  		serverObject.setChanged();
+					  		serverObject.notifyObservers("updateDurationSuccessful|" + item.name + "|" + item.duration);
+						}
+						else {
+							item.duration = BigDecimal.ZERO;
+							expiredItemQueue.add(item);
+					  		serverObject.setChanged();
+					  		serverObject.notifyObservers("updateDurationSuccessful|" + item.name + "|" + item.duration);
+						}
 					}
 				}
 			}
@@ -133,7 +135,9 @@ class Server extends Observable {
 					}
 				}
 				while (!expiredItemQueue.isEmpty()) {
-					activeItemList.remove(expiredItemQueue.remove()); // check if this is causing the concurrent modification exception
+					synchronized (activeItemListLock) {
+						activeItemList.remove(expiredItemQueue.remove()); // check if this is causing the concurrent modification exception
+					}
 				}
 			}
 		}, 0, 500);
@@ -266,7 +270,7 @@ class Server extends Observable {
 	  String itemListString = "";
 	  
 	  for (Item item : itemList) {
-		  itemListString += item.name + "|" + item.description + "|" + String.valueOf(item.minPrice) + "|" + String.valueOf(item.currentBidPrice) + "|" + item.highestBidderUsername + "|" + String.valueOf(item.duration) + "|";
+		  itemListString += item.name + "|" + item.description + "|" + String.valueOf(item.minPrice) + "|" + String.valueOf(item.currentBidPrice) + "|" + item.highestBidderUsername + "|" + String.valueOf(item.duration) + "|" + item.soldMessage + "|";
 	  }
 	  return itemListString;
   }

@@ -42,7 +42,7 @@ class ClientHandler extends Server implements Runnable, Observer {
 	}
 
 	protected void sendToClient(String string) {
-    	System.out.println("Sending to client #" + clientID + ": " + string); // uncomment this to see commands sent to clients
+//    	System.out.println("Sending to client #" + clientID + ": " + string); // uncomment this to see commands sent to clients
     	toClient.println(string);
     	toClient.flush();
 	}

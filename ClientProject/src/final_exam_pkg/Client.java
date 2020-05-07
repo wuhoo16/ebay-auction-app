@@ -20,6 +20,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.event.EventHandler;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
@@ -54,6 +55,7 @@ public class Client extends Application {
 	private static final double MAX_WIDTH = Screen.getPrimary().getBounds().getMaxX();
 	private static final double MAX_HEIGHT = Screen.getPrimary().getBounds().getMaxY();
 	private static final DecimalFormat MONEY_FORMATTER = new DecimalFormat("#.##");
+	private static final BigDecimal TEN_SECONDS = new BigDecimal(0.175);
 	private static String host;
 	private static Socket socket;
 	private static BufferedReader fromServer;
@@ -82,20 +84,20 @@ public class Client extends Application {
 			this.currentBidPrice = 0.00;
 			highestBidderUsername = "N/A";
 			this.duration = duration;
-			soldMessage = "";
+			soldMessage = "Item is up for sale!";
 //			if (duration > 0) {
 //				isBiddable = true;
 //			}
 		}
 		// new parameterized constructor
-		private Item (String name, String description, double minPrice, double currentBidPrice, String highestBidderUsername, BigDecimal duration) {
+		private Item (String name, String description, double minPrice, double currentBidPrice, String highestBidderUsername, BigDecimal duration, String soldMsg) {
 			this.name = name;
 			this.description = description;
 			this.minPrice = minPrice;
 			this.currentBidPrice = currentBidPrice;
 			this.highestBidderUsername = new String(); this.highestBidderUsername += highestBidderUsername;
 			this.duration = duration;
-			soldMessage = "";
+			this.soldMessage = soldMsg;
 //			if (duration > 0) {
 //				isBiddable = true;
 //			}
@@ -106,8 +108,9 @@ public class Client extends Application {
 //	private static boolean isItemListInitialized = false;
 //	private static ObservableList<Item> observableItemList;
 	private static ArrayList<String> itemNamesList = new ArrayList<String> ();
-	private static HashSet<String> watchlistItems = new HashSet<String>();
-	private static ArrayList<Pair<String,Label>> watchlistInfoNodes = new ArrayList<Pair<String,Label>>();
+	private static HashSet<String> watchlistItemNames = new HashSet<String>();
+	private static ArrayList<Item> watchlistItems = new ArrayList<Item>();
+	private static ArrayList<Pair<String, VBox>> watchlistInfoNodes = new ArrayList<Pair<String, VBox>>();
 	private static boolean isItemListUpdated = false;
 	private static boolean sessionDone = false;
 	private static ArrayList<Thread> activeThreadList = new ArrayList<Thread>();
@@ -118,8 +121,9 @@ public class Client extends Application {
 		username = null;
 		itemList = new ArrayList<Item> ();
 		itemNamesList = new ArrayList<String> ();
-		watchlistItems = new HashSet<String>();
-		watchlistInfoNodes  = new ArrayList<Pair<String,Label>>();
+		watchlistItemNames = new HashSet<String>();
+		watchlistItems = new ArrayList<Item>();
+		watchlistInfoNodes  = new ArrayList<Pair<String, VBox>>();
 		isItemListUpdated = false;
 		sessionDone = false;
 		activeThreadList  = new ArrayList<Thread>();
@@ -135,19 +139,10 @@ public class Client extends Application {
   
 	@Override
 	public void start(Stage primaryStage) {
-//		// set up this client's socket connection with server
-//		try {
-//			Client.setUpSocketConnection();
-//			sendToServer("initializeItemList"); // set initialize Item menu as first command
-//		} catch (Exception e) {
-//			System.out.println("exception when setting up socket connection");
-//			e.printStackTrace();
-//		}
-		
 		// Generate initial login scene and place on the primary stage
 		primaryStage.setTitle("Auction Login Page"); // Set the stage title 
 		primaryStage.setScene(generateNewLoginScene(primaryStage)); // Place the scene in the stage
-		primaryStage.setMaximized(true);
+//		primaryStage.setMaximized(true);
 		primaryStage.show(); // Display the stage 
 	}
 	
@@ -377,10 +372,14 @@ public class Client extends Application {
 		
 		
 		// Scrollpane + watchlist view nodes
-		ScrollPane scrollWindow = new ScrollPane(); // watchlist window node
+//		ScrollPane scrollWindow = new ScrollPane(); // watchlist scrollpane
+//		scrollWindow.setMaxHeight(650);
 		ListView<VBox> itemView = new ListView<VBox>();
-		itemView.setMinWidth(1890);
-		itemView.setMaxSize(1890, 750);
+//		scrollWindow.setContent(itemView);
+//		scrollWindow.setPannable(true);
+		itemView.setPrefWidth(1890);
+		itemView.setPrefHeight(675);
+
 		
 		// Final Layout Specification from top to bottom: welcomeMessage, controller, scrollWindow (containing itemView VBox)
 		HBox controllerRow1 = new HBox(5, itemMenu, addItemButton, addItemErrorMessage);  // controller node
@@ -388,13 +387,16 @@ public class Client extends Application {
 		HBox controllerRow2 = new HBox(5, bidInstruction, bidField, bidButton, bidErrorMessage);
 		controllerRow2.setAlignment(Pos.CENTER);
 		VBox controller = new VBox(5, controllerRow1, controllerRow2); // controller node (with all user interface)
-		scrollWindow.setContent(itemView);
-		scrollWindow.setPannable(true);
-		VBox grid = new VBox(5, welcomeMessageRow, controller, divider, scrollWindow);
-		VBox.setMargin(scrollWindow, new Insets(10));
+		VBox grid = new VBox(5, welcomeMessageRow, controller, divider, itemView);
+		VBox.setMargin(itemView, new Insets(10));
 
 		
-		// Helper threads to handle button enabling and periodically update itemList
+		// Helper threads to handle window resize spacing, button enabling, and periodically updating the itemList
+		primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> { // will resize the welcome message to be centered everytime stage window is resized by user
+			Platform.runLater(() -> {
+			welcomeMessageRow.setSpacing((primaryStage.getWidth() / 2) - logOutButton.getWidth() - (welcomeMessage.getWidth() / 2));
+			});
+		});
 		Thread enableButtonThread = new Thread(new Runnable () {
 			@Override
 			public void run() {
@@ -432,10 +434,15 @@ public class Client extends Application {
 			@Override
 			public void run() {
 				while (!sessionDone) {
-					for (Pair<String,Label> nodePair : watchlistInfoNodes) {
+					for (Pair<String, VBox> nodePair : watchlistInfoNodes) {
 						String itemName = nodePair.getKey();
-						Label infoNode = nodePair.getValue();
-						for (Item item : itemList) {
+						VBox itemNode = nodePair.getValue();
+						VBox itemInfoBox = (VBox) itemNode.lookup("#itemInfoBox");
+						HBox itemInfoHBox = (HBox) itemInfoBox.getChildren().get(0);
+						Label itemBidInfo = (Label) itemInfoHBox.lookup("#itemBidInfo");
+						Label itemTimeInfo = (Label) itemInfoHBox.lookup("#itemTimeInfo");
+						Label soldInfo = (Label) itemInfoBox.lookup("#soldInfo");
+						for (Item item : watchlistItems) {
 							if (itemName.contentEquals(item.name)) {
 								BigDecimal bigDecimalDuration = item.duration;
 								int minutes = bigDecimalDuration.intValue();
@@ -443,9 +450,23 @@ public class Client extends Application {
 								int seconds = (decimalPart.multiply((new BigDecimal(60)))).intValue();
 								String minutesString = String.format("%02d", minutes);
 								String secondsString = String.format("%02d", seconds);
-								String timeLeft = minutesString + ":" + secondsString;
+								
 								Platform.runLater(() -> {
-									infoNode.setText("Minimum Bidding Price: $" + item.minPrice + "  Current Bid: $" + MONEY_FORMATTER.format(item.currentBidPrice) + "  Highest Bidder: " + item.highestBidderUsername +  "  Time left: " + timeLeft);
+									if (bigDecimalDuration.compareTo(BigDecimal.ZERO) == 0) {
+										itemNode.setDisable(true);
+									}
+									String currentBidString = "$" + MONEY_FORMATTER.format(item.currentBidPrice);
+									if (item.currentBidPrice == 0.00) {
+										currentBidString = "N/A";
+									}
+									itemBidInfo.setText("Minimum Bidding Price: $" + MONEY_FORMATTER.format(item.minPrice) + "  Current Bid: " + currentBidString + "  Highest Bidder: " + item.highestBidderUsername);
+									if (bigDecimalDuration.compareTo(TEN_SECONDS) == -1) {
+										itemTimeInfo.setStyle("-fx-text-fill: red; -fx-font-size: 13px");
+									}
+									itemTimeInfo.setText("  Time left: " + minutesString + ":" + secondsString);
+									if (!item.soldMessage.contentEquals("")) {
+										soldInfo.setText(item.soldMessage);
+									}
 								});
 							}
 						}
@@ -462,9 +483,6 @@ public class Client extends Application {
 		enableButtonThread.start();
 		enableButtonThread.setName("enableButtonThread");
 		activeThreadList.add(enableButtonThread);
-//		itemListUpdaterThread.start();
-//		itemListUpdaterThread.setName("itemListUpdaterThread");
-//		activeThreadList.add(itemListUpdaterThread);
 		updateWatchlistThread.start();
 		updateWatchlistThread.setName("updateWatchlistThread");
 		activeThreadList.add(updateWatchlistThread);
@@ -473,32 +491,43 @@ public class Client extends Application {
 		//===========================================================================================================
 		addItemButton.setOnAction(e -> { // add-item button handler and use lambda expression instead of EventHandler
 			String chosenItemName = itemMenu.getValue();
-			if (!watchlistItems.contains(chosenItemName)) { // item has not been added to watchlist yet -> add to watchlist
+			if (!watchlistItemNames.contains(chosenItemName)) { // item has not been added to watchlist yet -> add to watchlist
 				clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
 				Item chosenItem = null;
 				for (Item item: itemList) {
 					if (item.name.contentEquals(chosenItemName)) chosenItem = item;
 				}
 				Label itemNameLabel = new Label(chosenItem.name);
-				itemNameLabel.setStyle("-fx-text-fill: black; font-weight: bold; -fx-font-size: 16pt");
+				itemNameLabel.setStyle("-fx-text-fill: black; font-weight: bold; -fx-font-size: 18pt");
 				Label itemDescription = new Label (chosenItem.description);
 				String currentBidPrice = "N/A";
 				if (chosenItem.currentBidPrice != 0.00) {
 					currentBidPrice = new String(); currentBidPrice += "$" + MONEY_FORMATTER.format(chosenItem.currentBidPrice);
 				}
 				BigDecimal bigDecimal = chosenItem.duration;
-				int minutes = bigDecimal.intValue();
+				Integer minutes = bigDecimal.intValue();
 				BigDecimal decimalPart = bigDecimal.subtract(new BigDecimal(minutes));
-				int seconds = (decimalPart.multiply((new BigDecimal(60)))).intValue();
+				Integer seconds = (decimalPart.multiply((new BigDecimal(60)))).intValue();
 				String minutesString = String.format("%02d", minutes);
 				String secondsString = String.format("%02d", seconds);
-				String initialTimeLeft = minutesString + ":" + secondsString;
-				Label itemInfo = new Label ("Minimum Bidding Price: $" + chosenItem.minPrice + "  Current Bid: " + currentBidPrice + "  Highest Bidder: " + chosenItem.highestBidderUsername + "  Time left: " + initialTimeLeft);
+				Label itemBidInfo = new Label (("Minimum Bidding Price: $" + MONEY_FORMATTER.format(chosenItem.minPrice) + "  Current Bid: " + currentBidPrice + "  Highest Bidder: " + chosenItem.highestBidderUsername));
+				itemBidInfo.setId("itemBidInfo");
+				Label itemTimeInfo = new Label("  Time left: " + minutesString + ":" + secondsString);
+				itemTimeInfo.setId("itemTimeInfo");
+				HBox itemInfoHBox = new HBox(0, itemBidInfo, itemTimeInfo);
+				Label soldInfo = new Label(chosenItem.soldMessage);
+				soldInfo.setFont(new Font("Segoe UI Bold", 12));
+				soldInfo.setId("soldInfo");				
+				VBox itemInfoBox = new VBox(0, itemInfoHBox, soldInfo);
+				itemInfoBox.setId("itemInfoBox");
+				VBox.setMargin(soldInfo, new Insets(2, 0, 2, 0));
 				Separator itemDivider = new Separator();
-				VBox itemNode = new VBox(2, itemNameLabel, itemDescription, itemInfo, itemDivider);
+				VBox itemNode = new VBox(2, itemNameLabel, itemDescription, itemInfoBox, itemDivider);
 				itemView.getItems().add(itemNode);
-				watchlistItems.add(chosenItemName);
-				watchlistInfoNodes.add(new Pair<String, Label>(chosenItemName, itemInfo));
+				watchlistItemNames.add(chosenItemName);
+				watchlistItems.add(chosenItem);
+				watchlistInfoNodes.add(new Pair<String, VBox>(chosenItemName, itemNode));
+//				scrollWindow.setViewportBounds((itemView.getBoundsInParent()));
 //	    		observableItemList.addListener((ListChangeListener<? super Item>) itemNode);
 			}
 			else { // else, item is already in watchlist window
@@ -535,12 +564,11 @@ public class Client extends Application {
 				// try to set flags so that all the helper threads finish executing
 				sessionDone = true;
 				for (Thread t : activeThreadList) {
-					System.out.println("Thread in Array: " + t.getName());
+//					System.out.println("Auction background thread name: " + t.getName());
 				    try {
 						t.join();
 					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						System.out.println("Java FX Application Thread interrupted while waiting for background threads to join.");
 					}
 				}
 				
@@ -648,31 +676,36 @@ public class Client extends Application {
 				Double minPrice = 0.00;
 				Double currentBidPrice = 0.00;
 				String highestBidderUsername = "";
-				BigDecimal duration;
+				String soldMsg = "";
+				BigDecimal duration = null;
     			for (int i = 1; i < inputArr.length; i++) {
     				if (!inputArr[i].contentEquals("")) {
-	    				if (i % 6 == 1) {
+	    				if (i % 7 == 1) {
 	    					name += inputArr[i];
 	    					itemNamesList.add(name);
 	    				}
-	    				else if (i % 6 == 2) {
+	    				else if (i % 7 == 2) {
 	    					description += inputArr[i];
 	    				}
-	    				else if (i % 6 == 3) {
+	    				else if (i % 7 == 3) {
 	    					minPrice = Double.parseDouble(inputArr[i]);
 	    				}
-	    				else if (i % 6 == 4) {
+	    				else if (i % 7 == 4) {
 	    					currentBidPrice = Double.parseDouble(inputArr[i]);
 	    				}
-	    				else if (i % 6 == 5) {
+	    				else if (i % 7 == 5) {
 	    					highestBidderUsername = inputArr[i];
 	    				}
-	    				else {
+	    				else if (i % 7 == 6) {
 	    					duration = new BigDecimal(inputArr[i]);
-	    	 				itemList.add(new Item(name, description, minPrice, currentBidPrice, highestBidderUsername, duration));
+	    				}
+	    				else {
+	    					soldMsg = inputArr[i];
+	    	 				itemList.add(new Item(name, description, minPrice, currentBidPrice, highestBidderUsername, duration, soldMsg));
 	    	 				name = "";
 	        				description = "";
 	        				highestBidderUsername = "";
+	        				soldMsg = "";
 	    				}
     				}
     			}
@@ -725,7 +758,7 @@ public class Client extends Application {
 	
 	
     protected static void sendToServer(String string) {
-    	System.out.println("Sending to server: " + string);
+    	System.out.println("Sending to server: " + string); // uncomment this to see commands sent to the server
     	toServer.println(string);
     	toServer.flush();
     }
