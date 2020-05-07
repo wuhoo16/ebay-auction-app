@@ -24,8 +24,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 class Server extends Observable {
-	final static BigDecimal ONE_SECOND = new BigDecimal(1.0).divide(new BigDecimal(60.0), 100, RoundingMode.HALF_UP);
-	private Integer numClients = 0;
+	// data fields:
 	class Item {
 		private String name;
 		private String description;
@@ -34,7 +33,6 @@ class Server extends Observable {
 		private String highestBidderUsername;
 		private BigDecimal duration;
 		private String soldMessage;
-//		private boolean isBiddable;
 		
 		private Item (String name, String description, double minPrice, BigDecimal duration) {
 			this.name = name;
@@ -44,28 +42,45 @@ class Server extends Observable {
 			this.highestBidderUsername = "N/A";
 			this.duration = duration; // this will be the duration in minutes
 			this.soldMessage = "Item is up for sale!";
-//			if (duration > 0) {
-//				isBiddable = true;
-//			}
 		}
 	}
-	protected ArrayList<Item> itemList = new ArrayList<Item>();
-	protected ArrayList<Item> activeItemList = new ArrayList<Item>();
-	Object activeItemListLock = new Object();
-	protected Queue<Item> expiredItemQueue = new LinkedList<Item>();
-	protected ArrayList<ClientHandler> observerList = new ArrayList<ClientHandler>();
+	final static BigDecimal ONE_SECOND = new BigDecimal(1.0).divide(new BigDecimal(60.0), 100, RoundingMode.HALF_UP);
+	private Integer numClients = 0;
+	private ArrayList<Item> itemList = new ArrayList<Item>();
+	private ArrayList<Item> activeItemList = new ArrayList<Item>();
+	private Object activeItemListLock = new Object();
+	private Queue<Item> expiredItemQueue = new LinkedList<Item>();
+	private ArrayList<ClientHandler> observerList = new ArrayList<ClientHandler>();
 	
 	
-	// Server's main method
+	// methods:
 	public static void main(String[] args) {
 		Server server = new Server();
-		server.getItemsFromFile();
 		server.startServer();
 	}
 	
 	
-	// stores data from the input file named "AuctionItemsInput" into an ArrayList
-	// Input file format: name, description, minimum bidding price, and duration on separate lines for each item
+	/**
+	 * Set up all timers and then continuously handle networking for the server.
+	 */
+	private void startServer() {
+	    try {
+	    	getItemsFromFile();
+	    	startServerTimer();
+	    	startExpirationTimer();
+	    	setUpSocketConnections();
+	    } catch (Exception e) {
+	    	e.printStackTrace();
+	    	return;
+	    }
+	}
+	
+
+	/**
+	 * Reads item data from the input text file named "AuctionItemsInput" and stores into an ArrayList, itemList.
+	 * NOTE: This method expects the input file to have the following format for each item: 
+	 * Item name, item description, minimum bidding price, and item auction duration, all on SEPARATE LINES.
+	 */
 	private void getItemsFromFile() {
 		File inputFile = new File("src/AuctionItemsInput");
 		try {
@@ -82,6 +97,7 @@ class Server extends Observable {
 //				System.out.println(duration);
 				itemList.add(new Item(name, description, minPrice, duration));
 			}
+			fileScanner.close();
 			activeItemList.addAll(itemList);
 		} catch (FileNotFoundException e) {
 			System.out.println("ERROR! Specified input file does not exist!");
@@ -90,7 +106,11 @@ class Server extends Observable {
 		}
 	}
 
-	// initializes a timer that will decrement the duration value of ALL items every 1 second
+	
+	/**
+	 * Starts a server timer that will decrement the duration value of all active items by 1 every second.
+	 * Should be synchronized with the remove code in startExpirationTimer to prevent concurrent modification exceptions.
+	 */
 	private void startServerTimer() {
 		Server serverObject = this;
 		Timer serverTimer = new Timer();
@@ -115,7 +135,11 @@ class Server extends Observable {
 		}, 0, 1000);
 	}
 	
-	// initialize a separate timer that will which items' duration have hit 0 and remove them from the database/notify all clients that is is sold
+	
+	/**
+	 * Starts another timer with timertask that will notify all clients when an item is sold, and remove sold/expired item from the server's activeItemList.
+	 * NOTE: activeItemList.remove() should bes synchronized with the for-loop in startServerTimer to prevent concurrent modification.
+	 */
 	private void startExpirationTimer() {
 		Server serverObject = this;
 		Timer expirationUpdater = new Timer();
@@ -143,60 +167,52 @@ class Server extends Observable {
 		}, 0, 500);
 	}
 	
-	// called in main to start the server timer countdown and continuously network any incoming client connections
-	private void startServer() {
-	    try {
-	    	startServerTimer();
-	    	startExpirationTimer();
-	    	setUpSocketConnections();
-	    } catch (Exception e) {
-	    	e.printStackTrace();
-	    	return;
+
+	/**
+	 * Continuously checks for any clients that are trying to connect to this server-socket bound to port 4242.
+	 * Creates a clienthandler for each client and adds it to as an observer of the server. Each client handler runs on a new thread.
+	 * @throws Exception
+	 */
+	private void setUpSocketConnections() throws Exception {
+	    @SuppressWarnings("resource")
+		ServerSocket serverSocket = new ServerSocket(4242);
+	    while (true) {
+	    	// listen and accept any client connection requests
+	    	Socket clientSocket = serverSocket.accept();
+	    	System.out.println("Connecting to client... " + clientSocket);
+	        
+	    	// Create a ClientHandler for each client and starts a new thread for each clienthandler
+	    	ClientHandler handler = new ClientHandler(this, clientSocket, numClients);
+	    	numClients++;
+	    	this.addObserver(handler);
+	    	observerList.add(handler);
+	    	Thread t = new Thread(handler);
+	    	t.start();
 	    }
 	}
-
-
-  /** setUpSocketConnections() method continuously checks for any clients that are trying to connect to the server through server socket 4242
-   * Adds each clienthandler as an observer of the server. Each client handler gets a new thread.
-   * 
-   * @throws Exception
-   * @return void
-   */
-  private void setUpSocketConnections() throws Exception {
-    @SuppressWarnings("resource")
-	ServerSocket serverSocket = new ServerSocket(4242);
-    while (true) {
-      Socket clientSocket = serverSocket.accept();
-      System.out.println("Connecting to client... " + clientSocket);
-      
-      ClientHandler handler = new ClientHandler(this, clientSocket, numClients);
-      numClients++;
-      this.addObserver(handler);
-      observerList.add(handler);
-
-      Thread t = new Thread(handler);
-      t.start();
-    }
-  }
   
-  // process inputs from the client
-  // Input must be in the format: command stringData
-  protected synchronized void processRequest(String input) {
-	  String outputString = "";
-	  if (!input.contains("|")) { // use parsing around spaces as delimiter, input command will be in the format: <command> <clientID>
-		  String[] inputArr = input.trim().split(" ");
-		  switch (inputArr[0]) {
-		  	case "initializeItemList" :
-		  		int clientIDToInit = Integer.parseInt(inputArr[1]);
-		  		ClientHandler handlerToInit = null;
-		  		for (ClientHandler observer : observerList) {
-		  			if (observer.clientID == clientIDToInit) {
-		  				handlerToInit = observer;
-		  			}
-		  		}
-		  		outputString += "initializeItemListSuccessful|" + itemListToString();
-		  		handlerToInit.sendToClient(outputString);
-				break;
+
+	/**
+	 * Parses and processes input commands from the client. The first argument of the input must be one of the following:
+     * "initializeItemList" , "removeObserver" , "updateBidPrice|"
+	 * @param input representing the input command from the client
+	 */
+	protected synchronized void processRequest(String input) {
+	   String outputString = "";
+	   if (!input.contains("|")) { // use parsing around spaces as delimiter, input command will be in the format: <command> <clientID>
+		   String[] inputArr = input.trim().split(" ");
+		   switch (inputArr[0]) {
+		  	 case "initializeItemList" :
+		  		 int clientIDToInit = Integer.parseInt(inputArr[1]);
+		  		 ClientHandler handlerToInit = null;
+		  		 for (ClientHandler observer : observerList) {
+		  			 if (observer.clientID == clientIDToInit) {
+		  				 handlerToInit = observer;
+		  			 }
+		  		 }
+		  		 outputString += "initializeItemListSuccessful|" + itemListToString();
+		  		 handlerToInit.sendToClient(outputString);
+				 break;
 				
 //		  	case "updateItemList":
 //		  		int clientIDToUpdate = Integer.parseInt(inputArr[1]);
@@ -210,38 +226,34 @@ class Server extends Observable {
 //		  		handlerToUpdate.sendToClient(outputString);
 //		  		break;
 		  		
-		  	case "removeObserver":
-		  		int clientID = Integer.parseInt(inputArr[1]);
-		  		ClientHandler handlerToRemove = null;
-		  		for (ClientHandler observer : observerList) {
-		  			if (observer.clientID == clientID) {
-		  				handlerToRemove = observer;
-		  			}
-		  		}
-				try {
-					handlerToRemove.toClient.flush();
-					handlerToRemove.toClient.close();
-					handlerToRemove.fromClient.close();
-					handlerToRemove.clientSocket.close();
-				} catch (IOException e) {
-					System.out.println("Closing client's server-socket threw IOException.");
-					e.printStackTrace();
-				}
-		  		this.deleteObserver(handlerToRemove);
-		  		observerList.remove(handlerToRemove);
-		  		numClients--;
-		  		break;
+		  	 case "removeObserver":
+		  		 int clientID = Integer.parseInt(inputArr[1]);
+		  		 ClientHandler handlerToRemove = null;
+		  		 for (ClientHandler observer : observerList) {
+		  		 	 if (observer.clientID == clientID) {
+		  				 handlerToRemove = observer;
+		  			 }
+		  		 }
+				 try {
+					 handlerToRemove.toClient.flush();
+					 handlerToRemove.toClient.close();
+					 handlerToRemove.fromClient.close();
+					 handlerToRemove.clientSocket.close();
+				 } catch (IOException e) {
+					 System.out.println("Closing client's server-socket threw IOException.");
+					 e.printStackTrace();
+				 }
+		  		 this.deleteObserver(handlerToRemove);
+		  		 observerList.remove(handlerToRemove);
+		  		 numClients--;
+		  		 break;
 		  		
-		  	default:
+		  	 default:
 		  		
-		  }
+		   }
 	  }
 	  else { // else, input must contain pipe characters and must be in the format:  command|itemName|newBidValue|higestBidderUsername
 		  String[] inputArr = input.trim().split("\\|");
-//		  System.out.println("0th element: " + inputArr[0]);
-//		  System.out.println("1th element: " + inputArr[1]);
-//		  System.out.println("2th element: " + inputArr[2]);
-//		  System.out.println("3th element: " + inputArr[3]);
 		  switch (inputArr[0]) {
 		  	case "updateBidPrice":
 		  		for (Item item : itemList) {
@@ -254,25 +266,24 @@ class Server extends Observable {
 		  			}
 		  		}
 				break;
-			default:
 				
-		  }
-	  }
-    	
-
-	  
-// 	  this.setChanged();
-//	  this.notifyObservers(outputString);
-  }
+			default:
+		  }//end of switch
+	   }
+	}//end of processRequest
   
-  // helper method that returns a string of all item names in itemList, each separated by a newline character
-  private String itemListToString() {
-	  String itemListString = "";
-	  
-	  for (Item item : itemList) {
-		  itemListString += item.name + "|" + item.description + "|" + String.valueOf(item.minPrice) + "|" + String.valueOf(item.currentBidPrice) + "|" + item.highestBidderUsername + "|" + String.valueOf(item.duration) + "|" + item.soldMessage + "|";
-	  }
-	  return itemListString;
-  }
   
-}
+	/**
+	 * Returns a string of all data in the itemList, with each new datatype separated by a pipe character.
+     * NOTE: WHEN PARSING ON THE CLIENT SIDE, MAKE SURE TO SPLIT AROUND "\\|" since the pipe character is a special regular expression.
+	 * @return String representation of all the contents of the server's itemList ArrayList.
+	 */
+	private String itemListToString() {
+		String itemListString = "";
+	    for (Item item : itemList) {
+		    itemListString += item.name + "|" + item.description + "|" + String.valueOf(item.minPrice) + "|" + String.valueOf(item.currentBidPrice) + "|" + item.highestBidderUsername + "|" + String.valueOf(item.duration) + "|" + item.soldMessage + "|";
+	    }
+	    return itemListString;
+	}
+  
+}//end of Server class

@@ -52,21 +52,7 @@ import java.net.Socket;
 import java.text.DecimalFormat;
 
 public class Client extends Application {
-	private static final double MAX_WIDTH = Screen.getPrimary().getBounds().getMaxX();
-	private static final double MAX_HEIGHT = Screen.getPrimary().getBounds().getMaxY();
-	private static final DecimalFormat MONEY_FORMATTER = new DecimalFormat("#.##");
-	private static final BigDecimal TEN_SECONDS = new BigDecimal(0.175);
-	private static String host;
-	private static Socket socket;
-	private static BufferedReader fromServer;
-	private static PrintWriter toServer;
-	
-//	private Scanner consoleInput = new Scanner(System.in);
-//	private static Queue<String> commandBuffer = new LinkedList<String>();
-//	private static boolean isFirstClickOfLoginField = true;
-//	private static boolean isFirstClickOfPasswordField = true;
-	private static boolean isIPFieldCleared = false;
-	private static String username = null;
+	// inner Item class definition
 	static class Item {
 		private String name;
 		private String description;
@@ -75,21 +61,8 @@ public class Client extends Application {
 		private String highestBidderUsername;
 		private BigDecimal duration;
 		private String soldMessage;
-//		private boolean isBiddable;
 		
-		private Item (String name, String description, double minPrice, BigDecimal duration) {
-			this.name = name;
-			this.description = description;
-			this.minPrice = minPrice;
-			this.currentBidPrice = 0.00;
-			highestBidderUsername = "N/A";
-			this.duration = duration;
-			soldMessage = "Item is up for sale!";
-//			if (duration > 0) {
-//				isBiddable = true;
-//			}
-		}
-		// new parameterized constructor
+		// new parameterized constructor - Items should only be instiantiated by calling this constructor 
 		private Item (String name, String description, double minPrice, double currentBidPrice, String highestBidderUsername, BigDecimal duration, String soldMsg) {
 			this.name = name;
 			this.description = description;
@@ -98,15 +71,24 @@ public class Client extends Application {
 			this.highestBidderUsername = new String(); this.highestBidderUsername += highestBidderUsername;
 			this.duration = duration;
 			this.soldMessage = soldMsg;
-//			if (duration > 0) {
-//				isBiddable = true;
-//			}
 		}
-		
 	}
-	private static ArrayList<Item> itemList = new ArrayList<Item> ();
-//	private static boolean isItemListInitialized = false;
-//	private static ObservableList<Item> observableItemList;
+	
+	// constant data fields
+	private static final double MAX_WIDTH = Screen.getPrimary().getBounds().getMaxX();
+	private static final double MAX_HEIGHT = Screen.getPrimary().getBounds().getMaxY();
+	private static final DecimalFormat MONEY_FORMATTER = new DecimalFormat("#.##");
+	private static final BigDecimal TEN_SECONDS = new BigDecimal(0.175);
+	
+	// networking data fields
+	private static Socket socket;
+	private static BufferedReader fromServer;
+	private static PrintWriter toServer;
+	
+	//
+	private static boolean isIPFieldCleared = false;
+	private static String username = null;
+	private static ArrayList<Item> itemList = new ArrayList<Item> (); // look into OberservableArrayLists if u can figure out listeners
 	private static ArrayList<String> itemNamesList = new ArrayList<String> ();
 	private static HashSet<String> watchlistItemNames = new HashSet<String>();
 	private static ArrayList<Item> watchlistItems = new ArrayList<Item>();
@@ -115,7 +97,13 @@ public class Client extends Application {
 	private static boolean sessionDone = false;
 	private static ArrayList<Thread> activeThreadList = new ArrayList<Thread>();
 	
-	// resets all of the Client class's data members before returning to the login scene
+	
+	/**
+	 * Resets all of the Client class's non-networking data members to default values. 
+	 * Call this method when user presses the auction "log-out" button.
+	 * 
+	 * @return void
+	*/
 	private static void resetAllVariables() {
 		isIPFieldCleared = false;
 		username = null;
@@ -130,38 +118,54 @@ public class Client extends Application {
 	}
 	
 	
-	// default constructor (may not be called)
+	// default constructor (not called in this program since only 1 client exists per project)
 	public Client() {
-		host = "127.0.0.1"; // default local host // TODO: later change to init. dynamically based on text input from login menu
-//		consoleInput = new Scanner(System.in); // TODO: input will not be from console, change to get from GUI buttons
+		// if changing implementation to have instances of Client, initialize data members here
 	}
 	
-  
+	
+	public static void main(String[] args) {	
+		launch(args); // Launch Java FX Application thread
+	}
+	
 	@Override
 	public void start(Stage primaryStage) {
-		// Generate initial login scene and place on the primary stage
+		// Generate initial login scene and place it on the primary stage
 		primaryStage.setTitle("Auction Login Page"); // Set the stage title 
 		primaryStage.setScene(generateNewLoginScene(primaryStage)); // Place the scene in the stage
-//		primaryStage.setMaximized(true);
 		primaryStage.show(); // Display the stage 
 	}
 	
 	
-	// helper function that returns regular expression needed to create the ip field text formatter
-    private static String getRegEx() {
+	/**
+	 *  Helper function for generateNewLoginScene() that returns a regular expression for generating the ip field text-formatter. Remember to cite this from StackOverflow.
+	 *  Used on line 182-184 in the ipFilter TextFormatter definition.
+	 *  
+	 *  @return String represesenting a regular expression to filter certain user textfield input
+	 */
+    private static String getIPRegExpression() {
         String firstBlock = "(([01]?[0-9]{0,2})|(2[0-4][0-9])|(25[0-5]))" ;
-        String nextBlock = "(\\." + firstBlock+")" ;
+        String nextBlock = "(\\." + firstBlock + ")" ;
         String ipAddress = firstBlock+ "?" + nextBlock + "{0,3}";
         return "^" + ipAddress;
     }
 	
     
-	// LOGIN PAGE SCENE BELOW
-	// This method will initialize and return a new login scene
+    
+    // LOGIN PAGE LOGIC BELOW
+    // ==========================================================================================
+    /**
+     *  Initializes all nodes in the login page and returns this new login scene. 
+     *  All buttons, textfields, and other dynamic nodes are reset to the initial state.
+     *  
+     *  @param primaryStage paramater of start()
+     *  @return Scene loginScene
+     */
 	private static Scene generateNewLoginScene(Stage primaryStage) {
+		// All nodes in this scene placed on this borderpane
 		BorderPane loginPane = new BorderPane();
 			
-		// borderPane RIGHT nodes
+		// borderPane RIGHT nodes (quit button)
 		Button quitButton = new Button("Quit"); // quit button node
 		quitButton.setPrefSize(70,  30);
 		quitButton.setStyle("-fx-text-fill: red; font-weight: bold; -fx-font-size: 16px");
@@ -169,7 +173,7 @@ public class Client extends Application {
 		BorderPane.setMargin(quitButton,  new Insets(10, 10, 0, 0));
 		
 		
-		// borderPane CENTER-TOP nodes
+		// borderPane CENTER-TOP nodes (welcome and sign-in text)
 		Label greeting = new Label();
 		Label signIn = new Label();
 		greeting.setText("Welcome to Ebae!");
@@ -181,37 +185,54 @@ public class Client extends Application {
 		VBox.setMargin(greeting,  new Insets(10, 0, 0, 0));
 		
 		
-		// borderPane CENTER nodes
+		// borderPane CENTER nodes (All textfields and sign-in buttons)
 		TextField hostIPField = new TextField(); // IP field node
-		hostIPField.setText("127.0.0.1"); // set the server ip address to be local machine by default (wipes if user clicks on the field)
+		hostIPField.setText("127.0.0.1"); // set the server ip address to be local machine by default
 		hostIPField.setStyle("-fx-text-fill: grey; font-style: italic");
 		hostIPField.setFont(new Font("Segoe UI", 12));
-		String regex = getRegEx();
+		String regEx = getIPRegExpression();
 		final UnaryOperator<TextFormatter.Change> ipFilter = e -> {
-			return (e.getControlNewText().matches(regex) ? e : null);
+			return (e.getControlNewText().matches(regEx) ? e : null);
 		};
-		hostIPField.setOnMousePressed(e -> { // wipes the ip field if user wants to connect to a remote server
+		hostIPField.setOnMousePressed(e -> { // wipes the ip field on first click
 				if (!isIPFieldCleared) {
 					hostIPField.clear();
 					hostIPField.setTextFormatter(new TextFormatter<>(ipFilter));
 					isIPFieldCleared = true;
 				}
 		});
-		TextField loginField = new TextField(); // login field node
+		TextField loginField = new TextField(); // login field
 		loginField.setPromptText("Email or username");
 		loginField.setStyle("-fx-text-fill: grey; font-style: italic");
 		loginField.setFont(new Font("Segoe UI", 12));
-		TextField passwordField = new TextField(); // password field node
+		TextField passwordField = new TextField(); // password field
 		passwordField.setPromptText("Password");
 		passwordField.setStyle("-fx-text-fill: grey; font-style: italic");
 		passwordField.setFont(new Font("Segoe UI", 12));
-		Button signInButton = new Button("Sign in"); // sign-in button node
-		Label signInErrorMsg = new Label();
-		HBox signInBox = new HBox (10, signInButton, signInErrorMsg);
-		
-		signInErrorMsg.setStyle("-fx-text-fill: red");
+		Button signInButton = new Button("Sign in"); // sign-in button
 		signInButton.setStyle("-fx-text-fill: blue; font-weight: bold; -fx-font-size: 16px");
 		signInButton.setAlignment(Pos.CENTER); 
+		Label signInErrorMsg = new Label(); // sign-in error msg
+		signInErrorMsg.setStyle("-fx-text-fill: red");
+		HBox signInBox = new HBox (10, signInButton, signInErrorMsg); // place error message to the right of sign-in button
+		Button guestButton = new Button("Continue as guest"); // sign-in as guest button
+		
+		
+		// BorderPane Center Node's Alignment: Login field, password field, sign in button, and guest button
+		VBox centerBox = new VBox(5, welcomeBox, hostIPField, loginField, passwordField, signInBox, guestButton);
+		centerBox.setMaxSize(400, 900); // this controls the max size of the text fields
+		VBox.setMargin(welcomeBox, new Insets(0, 10, 15, 10));
+		VBox.setMargin(hostIPField, new Insets(0, 10, 0, 10));
+		VBox.setMargin(loginField, new Insets(0, 10, 0, 10));
+		VBox.setMargin(passwordField, new Insets(0, 10, 0, 10));
+		VBox.setMargin(signInBox, new Insets(0, 10, 0, 10));
+		VBox.setMargin(guestButton, new Insets(15, 10, 0, 10));
+		loginPane.setCenter(centerBox);
+		
+		
+		// BUTTON HANDLERS DEFINITIONS BELOW
+		// ==================================================================
+		// sign-in button handler
 		signInButton.setOnAction(new EventHandler<ActionEvent>() { 
 			@Override
 			public synchronized void handle(ActionEvent event) {
@@ -221,36 +242,41 @@ public class Client extends Application {
 
 				if (inputUsername.equals("")) {
 					signInErrorMsg.setText("ERROR! Please enter a username");
+					// TODO: write helper method clearAllLoginFields(TextField loginField, TextField passwordField, TextField hostIPField) that clears all of the 3 textfields and call method here
 					loginField.setText("");
 					passwordField.setText("");
 					hostIPField.setText("");
 				}
 				else if (password.equals("")) {
 					signInErrorMsg.setText("ERROR! Please enter a password");
+					// TODO: call clearAllLoginFields(loginField, passwordField, hostIPField);
 					loginField.setText("");
 					passwordField.setText("");
 					hostIPField.setText("");
 				}
 				else if (hostIP.contentEquals("")) {
 					signInErrorMsg.setText("ERROR! Please enter a valid host IP address");
+					// TODO: clearAllLoginFields(loginField, passwordField, hostIPField);
 					loginField.setText("");
 					passwordField.setText("");
 					hostIPField.setText("");
 				}
-				else { // none of the blanks are empty		
+				else { // else, none of the text-fields are empty		
 					try {
 						signInErrorMsg.setText("");
 			    		setUpSocketConnection(hostIP);
 			    		hostIP = "";
 			    		sendToServer("initializeItemList"); // initialize Item menu as first command
-			    		while (!isItemListUpdated) {System.out.println("Loading items from server database..."); Thread.yield();}
+			    		while (!isItemListUpdated) {System.out.println("Loading items from server database..."); Thread.yield();} // wait until client item database is initialized before continuing
 			    		username = inputUsername;
 			    		primaryStage.setTitle("Auction Site"); 
 						primaryStage.setScene(generateNewAuctionScene(primaryStage)); 
+						primaryStage.setMaximized(true);
 						primaryStage.show();
 					} catch (Exception e) {
 						System.out.println("ERROR! Exception thrown since Server IP address is invalid.");
 						signInErrorMsg.setText("ERROR! Server refused to connect.");
+						// TODO: clearAllLoginFields(loginField, passwordField, hostIPField);
 						loginField.setText("");
 						passwordField.setText("");
 						hostIPField.setText("");
@@ -258,16 +284,15 @@ public class Client extends Application {
 				}
 			}
     	});
-		Button guestButton = new Button("Continue as guest"); // guest button node
+		// guest button-handler (if no username and no password filled in)
 		guestButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public synchronized void handle(ActionEvent event) {
-				String inputUsername = loginField.getText();
-				String password = passwordField.getText();
 				String hostIP = hostIPField.getText();
 
 				if (hostIP.contentEquals("")) {
 					signInErrorMsg.setText("ERROR! Please enter a valid host IP address");
+					// TODO: clearAllLoginFields(loginField, passwordField, hostIPField);
 					loginField.setText("");
 					passwordField.setText("");
 					hostIPField.setText("");
@@ -281,11 +306,12 @@ public class Client extends Application {
 			    		while (!isItemListUpdated) {System.out.println("Loading items from server database..."); Thread.yield();}
 			    		username = "Guest";
 			    		primaryStage.setTitle("Auction Site"); 
-						primaryStage.setScene(generateNewAuctionScene(primaryStage)); 
+						primaryStage.setScene(generateNewAuctionScene(primaryStage));
+						primaryStage.setMaximized(true);
 						primaryStage.show();
 					} catch (Exception e) {
-						System.out.println("ERROR! Exception thrown since Server IP address is invalid.");
 						signInErrorMsg.setText("ERROR! Server refused to connect.");
+						// TODO: clearAllLoginFields(loginField, passwordField, hostIPField);
 						loginField.setText("");
 						passwordField.setText("");
 						hostIPField.setText("");
@@ -293,6 +319,7 @@ public class Client extends Application {
 				}
 			}
     	});
+		// quit button-handler (exits application and program)
 		quitButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
@@ -302,33 +329,28 @@ public class Client extends Application {
     	});
 		
 		
-		// BorderPane Center Node's Alignment: Login field, password field, sign in button, and guest button
-		VBox centerBox = new VBox(5, welcomeBox, hostIPField, loginField, passwordField, signInBox, guestButton);
-		centerBox.setMaxSize(375, 900);
-		VBox.setMargin(welcomeBox, new Insets(0, 0, 15, 10));
-		VBox.setMargin(hostIPField, new Insets(0, 0, 0, 10));
-		VBox.setMargin(loginField, new Insets(0, 0, 0, 10));
-		VBox.setMargin(passwordField, new Insets(0, 0, 0, 10));
-		VBox.setMargin(signInBox, new Insets(0, 0, 0, 10));
-		VBox.setMargin(guestButton, new Insets(10, 0, 0, 10));
-		loginPane.setCenter(centerBox);
-		
-		Scene loginScene = new Scene(loginPane, MAX_WIDTH, MAX_HEIGHT);
+		// generate new login scene and return it
+		Scene loginScene = new Scene(loginPane, 425, 325);
 		return loginScene;
 	}
 	
 	
 	
 	
-	
-	// AUCTION PAGE SCREEN BELOW
-	// This method will generate all the nodes for the auction page and return the populated Scene
-	// Call this right after the user successfully signs-in
+	// AUCTION PAGE LOGIC BELOW
+	// =======================================================================================================
+	/**
+	 * Generate all FX nodes in the auction page and return this newly generated Scene.
+	 * Call this method right after the user signs-in successfully (either through sign-in handler or guest handler).
+	 * 
+	 * @param primaryStage
+	 * @return auctionScene, a newly generated auctionScene with freshly initialized nodes
+	 */
 	private static Scene generateNewAuctionScene(Stage primaryStage) {
-		// Welcome Message Row 0 Nodes
-		Label welcomeMessage = new Label("Welcome to the auction, " + Client.username + "!");
+		// WELCOME MESSAGE ROW NODES: Welcome header + log-out button
+		Label welcomeMessage = new Label("Welcome to the auction, " + Client.username + "!"); // welcome msg
 		welcomeMessage.setStyle("-fx-text-fill: blue; font-weight: bold; -fx-font-size: 24pt");
-		Button logOutButton = new Button("Log out");
+		Button logOutButton = new Button("Log out"); // log-out button
 		logOutButton.setStyle("-fx-text-fill: red; font-weight: bold; -fx-font-size: 16px");
 		logOutButton.setAlignment(Pos.CENTER_RIGHT);
 		HBox welcomeMessageRow = new HBox(640, welcomeMessage, logOutButton);
@@ -336,20 +358,29 @@ public class Client extends Application {
 		HBox.setMargin(logOutButton, new Insets(10, 10, 0, 0));
 		HBox.setMargin(welcomeMessage, new Insets(10, 0, 0, 0));
 		
-		// CONTROLLER ROW 1 NODES
+		
+		// CHANGE LISTENER will resize the welcome header spacing if the stage window gets resized by user:
+		primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> {
+			// TODO: verify if we can take out the Platform.runLater() since changelisteners are already on the FX thread
+			Platform.runLater(() -> {
+				welcomeMessageRow.setSpacing((primaryStage.getWidth() / 2) - logOutButton.getWidth() - (welcomeMessage.getWidth() / 2));
+			});
+		});
+		
+		
+		// CONTROLLER ROW 1 NODES: Drop-down menu + addItem button + addItemErrorMessage
 		ChoiceBox<String> itemMenu = new ChoiceBox<String>(); // item menu node
 		itemMenu.setPrefHeight(35);
-//		for (Item item : itemList) {
-//			itemNamesList.add(item.name);
-//		}
 		itemMenu.getItems().addAll(itemNamesList);
 		Button addItemButton = new Button("Add this item to watchlist"); 
 		addItemButton.setPrefHeight(35);
 		Label addItemErrorMessage = new Label();
 		addItemErrorMessage.setStyle("-fx-text-fill: red");
+		HBox controllerRow1 = new HBox(5, itemMenu, addItemButton, addItemErrorMessage);  // controller node
+		controllerRow1.setAlignment(Pos.CENTER);
 		
 		
-		// CONTROLLER ROW 2 NODES
+		// CONTROLLER ROW 2 NODES: enter bid label + bid textfield + bid button
 		Label bidInstruction = new Label("Enter bid amount: $");
 		bidInstruction.setStyle("-fx-text-fill: black; -fx-font-size: 18px");
 		bidInstruction.setAlignment(Pos.CENTER);
@@ -365,38 +396,33 @@ public class Client extends Application {
 		bidButton.setPrefHeight(35);
 		Label bidErrorMessage = new Label();
 		bidErrorMessage.setStyle("-fx-text-fill: red");
+		HBox controllerRow2 = new HBox(5, bidInstruction, bidField, bidButton, bidErrorMessage);
+		controllerRow2.setAlignment(Pos.CENTER);
 		
 		
-		// Divider line between controller and watchlist scrollpane
+		// CONTROLLER: controller row 1 + controller row 2
+		VBox controller = new VBox(5, controllerRow1, controllerRow2); // controller node (with all user interface)
+		
+		
+		// Divider line between controller and itemView listview
 		Separator divider = new Separator();
 		
 		
-		// Scrollpane + watchlist view nodes
-//		ScrollPane scrollWindow = new ScrollPane(); // watchlist scrollpane
-//		scrollWindow.setMaxHeight(650);
+		// Listview = watchlist window
 		ListView<VBox> itemView = new ListView<VBox>();
-//		scrollWindow.setContent(itemView);
-//		scrollWindow.setPannable(true);
 		itemView.setPrefWidth(1890);
 		itemView.setPrefHeight(675);
 
+		// TODO: Add nodes for the multi-tab console (showing sell history and bid history) below:
 		
-		// Final Layout Specification from top to bottom: welcomeMessage, controller, scrollWindow (containing itemView VBox)
-		HBox controllerRow1 = new HBox(5, itemMenu, addItemButton, addItemErrorMessage);  // controller node
-		controllerRow1.setAlignment(Pos.CENTER);
-		HBox controllerRow2 = new HBox(5, bidInstruction, bidField, bidButton, bidErrorMessage);
-		controllerRow2.setAlignment(Pos.CENTER);
-		VBox controller = new VBox(5, controllerRow1, controllerRow2); // controller node (with all user interface)
+		
+		
+		// Final Layout VBox: welcomeMessageRow, controller, itemView (=watchlist window) // TODO: add historyConsole node to grid
 		VBox grid = new VBox(5, welcomeMessageRow, controller, divider, itemView);
 		VBox.setMargin(itemView, new Insets(10));
 
 		
-		// Helper threads to handle window resize spacing, button enabling, and periodically updating the itemList
-		primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> { // will resize the welcome message to be centered everytime stage window is resized by user
-			Platform.runLater(() -> {
-			welcomeMessageRow.setSpacing((primaryStage.getWidth() / 2) - logOutButton.getWidth() - (welcomeMessage.getWidth() / 2));
-			});
-		});
+		// BACKGROUND THREADS to handle window resize spacing, button enabling, and periodically updating the itemList:
 		Thread enableButtonThread = new Thread(new Runnable () {
 			@Override
 			public void run() {
@@ -415,21 +441,7 @@ public class Client extends Application {
 				}
 			}
 		});
-//		Thread itemListUpdaterThread = new Thread(new Runnable () {
-//			@Override
-//			public void run() {
-//				while (!sessionDone) {
-//					if (!itemView.getItems().isEmpty()) { // while the itemView has nodes added to it, keep queuing commands to update the client's itemList
-//						sendToServer("updateItemList"); // update once per second
-//						try { // let other threads do work for 50 ms before updating this client's list
-//							Thread.sleep(50);
-//						} catch (InterruptedException e) {
-//							e.printStackTrace();
-//						}
-//					}
-//				}
-//			}
-//		});
+		enableButtonThread.setName("enableButtonThread");
 		Thread updateWatchlistThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -452,9 +464,6 @@ public class Client extends Application {
 								String secondsString = String.format("%02d", seconds);
 								
 								Platform.runLater(() -> {
-									if (bigDecimalDuration.compareTo(BigDecimal.ZERO) == 0) {
-										itemNode.setDisable(true);
-									}
 									String currentBidString = "$" + MONEY_FORMATTER.format(item.currentBidPrice);
 									if (item.currentBidPrice == 0.00) {
 										currentBidString = "N/A";
@@ -464,8 +473,11 @@ public class Client extends Application {
 										itemTimeInfo.setStyle("-fx-text-fill: red; -fx-font-size: 13px");
 									}
 									itemTimeInfo.setText("  Time left: " + minutesString + ":" + secondsString);
-									if (!item.soldMessage.contentEquals("")) {
+									if (!item.soldMessage.contentEquals("Item is up for sale")) {
 										soldInfo.setText(item.soldMessage);
+									}
+									if (bigDecimalDuration.compareTo(BigDecimal.ZERO) == 0) {
+										itemNode.setDisable(true);
 									}
 								});
 							}
@@ -480,84 +492,91 @@ public class Client extends Application {
 				}
 			}
         });
+		updateWatchlistThread.setName("updateWatchlistThread");
 		enableButtonThread.start();
-		enableButtonThread.setName("enableButtonThread");
 		activeThreadList.add(enableButtonThread);
 		updateWatchlistThread.start();
-		updateWatchlistThread.setName("updateWatchlistThread");
 		activeThreadList.add(updateWatchlistThread);
+		
 		
 		// ALL BUTTON HANDLERS ARE BELOW:
 		//===========================================================================================================
-		addItemButton.setOnAction(e -> { // add-item button handler and use lambda expression instead of EventHandler
-			String chosenItemName = itemMenu.getValue();
-			if (!watchlistItemNames.contains(chosenItemName)) { // item has not been added to watchlist yet -> add to watchlist
-				clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
-				Item chosenItem = null;
-				for (Item item: itemList) {
-					if (item.name.contentEquals(chosenItemName)) chosenItem = item;
-				}
-				Label itemNameLabel = new Label(chosenItem.name);
-				itemNameLabel.setStyle("-fx-text-fill: black; font-weight: bold; -fx-font-size: 18pt");
-				Label itemDescription = new Label (chosenItem.description);
-				String currentBidPrice = "N/A";
-				if (chosenItem.currentBidPrice != 0.00) {
-					currentBidPrice = new String(); currentBidPrice += "$" + MONEY_FORMATTER.format(chosenItem.currentBidPrice);
-				}
-				BigDecimal bigDecimal = chosenItem.duration;
-				Integer minutes = bigDecimal.intValue();
-				BigDecimal decimalPart = bigDecimal.subtract(new BigDecimal(minutes));
-				Integer seconds = (decimalPart.multiply((new BigDecimal(60)))).intValue();
-				String minutesString = String.format("%02d", minutes);
-				String secondsString = String.format("%02d", seconds);
-				Label itemBidInfo = new Label (("Minimum Bidding Price: $" + MONEY_FORMATTER.format(chosenItem.minPrice) + "  Current Bid: " + currentBidPrice + "  Highest Bidder: " + chosenItem.highestBidderUsername));
-				itemBidInfo.setId("itemBidInfo");
-				Label itemTimeInfo = new Label("  Time left: " + minutesString + ":" + secondsString);
-				itemTimeInfo.setId("itemTimeInfo");
-				HBox itemInfoHBox = new HBox(0, itemBidInfo, itemTimeInfo);
-				Label soldInfo = new Label(chosenItem.soldMessage);
-				soldInfo.setFont(new Font("Segoe UI Bold", 12));
-				soldInfo.setId("soldInfo");				
-				VBox itemInfoBox = new VBox(0, itemInfoHBox, soldInfo);
-				itemInfoBox.setId("itemInfoBox");
-				VBox.setMargin(soldInfo, new Insets(2, 0, 2, 0));
-				Separator itemDivider = new Separator();
-				VBox itemNode = new VBox(2, itemNameLabel, itemDescription, itemInfoBox, itemDivider);
-				itemView.getItems().add(itemNode);
-				watchlistItemNames.add(chosenItemName);
-				watchlistItems.add(chosenItem);
-				watchlistInfoNodes.add(new Pair<String, VBox>(chosenItemName, itemNode));
-//				scrollWindow.setViewportBounds((itemView.getBoundsInParent()));
-//	    		observableItemList.addListener((ListChangeListener<? super Item>) itemNode);
-			}
-			else { // else, item is already in watchlist window
-				addItemErrorMessage.setText("ERROR! " + chosenItemName + " is already added to the watchlist.");
-			}
-		});
-		bidButton.setOnAction(e -> { // palce-bid button handler with lambda expression
-			String chosenItemName = itemMenu.getValue();
-			Double userBid = Double.parseDouble(bidField.getText());
-				Item chosenItem = null;
-				for (Item item: itemList) {
-					if (item.name.contentEquals(chosenItemName)) chosenItem = item;
-				}
-				if (userBid <= chosenItem.minPrice) { // inputted bid is too low
-					bidErrorMessage.setText("INVALID BID! Your bid must be higher than the minimum bidding price.");
-				}
-				else if (userBid <= chosenItem.currentBidPrice) {
-					bidErrorMessage.setText("INVALID BID! Your bid must be higher than the current bid.");
-				}
-				else if (chosenItem.duration.doubleValue() <= 0.00) {
-					bidErrorMessage.setText("INVALID BID! Auction for this item has closed.");
-				}
-				else { // userBid is a valid bid
+		// add item button-handler
+		addItemButton.setOnAction(new EventHandler<ActionEvent>() { // add-item button handler and use lambda expression instead of EventHandler
+			@Override
+			public void handle(ActionEvent event) {
+				String chosenItemName = itemMenu.getValue();
+				if (!watchlistItemNames.contains(chosenItemName)) { // item has not been added to watchlist yet -> add to watchlist
 					clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
-//					isItemListChanged = false;
-					sendToServer("updateBidPrice|" + chosenItemName + "|" + String.valueOf(userBid) + "|" + username);
-					bidErrorMessage.setText("BID SUCCESSFUL! You are now the highest bidder.");
-					bidField.clear();
+					Item chosenItem = null;
+					for (Item item: itemList) {
+						if (item.name.contentEquals(chosenItemName)) chosenItem = item;
+					}
+					Label itemNameLabel = new Label(chosenItem.name);
+					itemNameLabel.setStyle("-fx-text-fill: black; font-weight: bold; -fx-font-size: 18pt");
+					Label itemDescription = new Label (chosenItem.description);
+					String currentBidPrice = "N/A";
+					if (chosenItem.currentBidPrice != 0.00) {
+						currentBidPrice = new String(); currentBidPrice += "$" + MONEY_FORMATTER.format(chosenItem.currentBidPrice);
+					}
+					BigDecimal bigDecimal = chosenItem.duration;
+					Integer minutes = bigDecimal.intValue();
+					BigDecimal decimalPart = bigDecimal.subtract(new BigDecimal(minutes));
+					Integer seconds = (decimalPart.multiply((new BigDecimal(60)))).intValue();
+					String minutesString = String.format("%02d", minutes);
+					String secondsString = String.format("%02d", seconds);
+					Label itemBidInfo = new Label (("Minimum Bidding Price: $" + MONEY_FORMATTER.format(chosenItem.minPrice) + "  Current Bid: " + currentBidPrice + "  Highest Bidder: " + chosenItem.highestBidderUsername));
+					itemBidInfo.setId("itemBidInfo");
+					Label itemTimeInfo = new Label("  Time left: " + minutesString + ":" + secondsString);
+					itemTimeInfo.setId("itemTimeInfo");
+					HBox itemInfoHBox = new HBox(0, itemBidInfo, itemTimeInfo);
+					Label soldInfo = new Label(chosenItem.soldMessage);
+					soldInfo.setFont(new Font("Segoe UI Bold", 12));
+					soldInfo.setId("soldInfo");				
+					VBox itemInfoBox = new VBox(0, itemInfoHBox, soldInfo);
+					itemInfoBox.setId("itemInfoBox");
+					VBox.setMargin(soldInfo, new Insets(2, 0, 2, 0));
+					Separator itemDivider = new Separator();
+					VBox itemNode = new VBox(2, itemNameLabel, itemDescription, itemInfoBox, itemDivider);
+					itemView.getItems().add(itemNode);
+					watchlistItemNames.add(chosenItemName);
+					watchlistItems.add(chosenItem);
+					watchlistInfoNodes.add(new Pair<String, VBox>(chosenItemName, itemNode));
 				}
+				else { // else, item is already in watchlist window
+					addItemErrorMessage.setText("ERROR! " + chosenItemName + " is already added to the watchlist.");
+				}
+			}
 		});
+		// bid button handler
+		bidButton.setOnAction(new EventHandler<ActionEvent>() { // palce-bid button handler with lambda expression
+			@Override
+			public void handle(ActionEvent event) {
+				String chosenItemName = itemMenu.getValue();
+				Double userBid = Double.parseDouble(bidField.getText());
+					Item chosenItem = null;
+					for (Item item: itemList) {
+						if (item.name.contentEquals(chosenItemName)) chosenItem = item;
+					}
+					if (userBid <= chosenItem.minPrice) { // inputted bid is too low
+						bidErrorMessage.setText("INVALID BID! Your bid must be higher than the minimum bidding price.");
+					}
+					else if (userBid <= chosenItem.currentBidPrice) {
+						bidErrorMessage.setText("INVALID BID! Your bid must be higher than the current bid.");
+					}
+					else if (chosenItem.duration.doubleValue() <= 0.00) {
+						bidErrorMessage.setText("INVALID BID! Auction for this item has closed.");
+					}
+					else { // userBid is a valid bid
+						clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
+	//					isItemListChanged = false;
+						sendToServer("updateBidPrice|" + chosenItemName + "|" + String.valueOf(userBid) + "|" + username);
+						bidErrorMessage.setText("BID SUCCESSFUL! You are now the highest bidder.");
+						bidField.clear();
+					}
+			}
+		});
+		// log out button-handler
 		logOutButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
@@ -587,34 +606,44 @@ public class Client extends Application {
 		});
 		
 		
-		
-		
-		// create and return auction Scene
+		// create and return newly initialized auction Scene
 		Scene auctionScene = new Scene(grid, MAX_WIDTH, MAX_HEIGHT);
 		return auctionScene;
 	}
 	
 	
-	// helper method that clears all error messages in the auction screen GUI
-	// usage: call this method after every successful user button press
+	/**
+	 * Helper method for generateNewAuctionScene() that clears all error messages in the auction GUI.
+	 * Call this method after every user button press in the auction scene.
+	 * 
+	 * @param addItemErrorMessage, Label from the auctionScene
+	 * @param bidErrorMessage, Label from the auctionScene
+	 */
 	private static void clearAuctionErrorMessages(Label addItemErrorMessage, Label bidErrorMessage) {
 		addItemErrorMessage.setText("");
 		bidErrorMessage.setText("");
 	}
 	
-  
-	// helper method that sets up connection to server through socket 4242, given host IP address
-	// usage: only call this method after successful sign-in button-press
+	
+	/**
+	 * Sets up the socket connection on port 4242 to the IP address specified by hostIP parameter as well as the "toServer" and "fromServer" IO streams to communicate with server.
+	 * Also declares and starts a readerThread that handles all commands from the server.
+	 * Usage: call this method after a successful sign-in, in the signIn button handler.
+	 * 
+	 * @param hostIP, String that represents the host server IP address that this client is trying to connect to
+	 * @throws Exception
+	 */
 	private static void setUpSocketConnection(String hostIP) throws Exception {
+		// set up socket connection and data streams
 	    try {
 	    	socket = new Socket(hostIP, 4242);
 	    } catch (IOException e) {
 	    	System.out.println("Error generating socket to server.");
 	    }
-	    
 	    System.out.println("Connecting to server... " + socket);
 	    toServer = new PrintWriter(socket.getOutputStream());
 	    fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+	    
 	    
 	    // readerThread handles all communication from the server
 	    Thread readerThread = new Thread(new Runnable() {
@@ -635,7 +664,7 @@ public class Client extends Application {
 	    		}
 	    	}
 	    });
-	    
+	    readerThread.setName("readerThread");
 	    // writerThread handles writes all client commands to the server
 //	    Thread writerThread = new Thread(new Runnable() {
 //	    	@Override
@@ -650,24 +679,53 @@ public class Client extends Application {
 //	    		}
 //	        }
 //	    });
-	    readerThread.start();
-	    readerThread.setName("readerThread");
-	    activeThreadList.add(readerThread);
+//	    writerThread.setName("writerThread");
 //	    writerThread.start();
+//	    activeThreadList.add(writerThread);
+	    
+	    readerThread.start();
+	    activeThreadList.add(readerThread);
 	}
 	
+	
+	/**
+	 * Sends "removeObserver" command to server to tell the server to remove this client's clientHandler from the observer list.
+	 * Server will also close the socket-connection from the server side. Called when user presses logOut button.
+	 * 
+	 * @throws IOException
+	 */
 	private static void closeSocketConnection() throws IOException {
 		Client.sendToServer("removeObserver");
-
 	}
 	
 	
-	// format of messages returned from server will be: <command+"Successful">|<inputDataString>
-	// command and each part of data is separated by |
+	/**
+	 * Sends a command string to the server through the toServer PrintWriter output stream. 
+	 * Commands you should pass in should be in the following list: "initializeItemList" , "removeObserver" , "updateBidPrice"
+	 * 
+	 * @param string, represents the command to send to the server
+	 */
+    protected static void sendToServer(String string) {
+    	System.out.println("Sending to server: " + string); // uncomment this to see commands sent to the server
+    	toServer.println(string);
+    	toServer.flush();
+    }
+    
+	
+	/**
+	 * Processes all input commands from the server by parsing and using the split input to update the client side itemList database.
+	 * Called within the readerThread run() method while the session is ongoing and the client socket is not closed.
+	 * COMMUNICATION PROTOCOL: format of messages returned from server: <command+Successful>|<dataFromServer>
+     * Note that the different sections of information are separated by PIPE characters, not spaces.
+	 * 
+	 * @param input, represents the input String from the server
+	 */
     protected static void processRequest(String input) {
-    	String[] inputArr = input.split("\\|"); // split input string around pipe character
+    	// Split string around the pipe character as a delimiter
+    	String[] inputArr = input.split("\\|"); 
     	
-    	// TODO: use inputArr[0] to decide how to use the information from the server below:
+    	// The first argument of the input string should always be <commandSuccessful>
+    	// Therefore, choose action to take based on value of inputArr[0]
     	switch (inputArr[0]) {
     		case "initializeItemListSuccessful":
     			itemList.clear();
@@ -749,18 +807,5 @@ public class Client extends Application {
     	
     	return;
     }
-
-  
-	public static void main(String[] args) {	
-		// Launch Java FX Application thread
-		launch(args);
-	}
-	
-	
-    protected static void sendToServer(String string) {
-    	System.out.println("Sending to server: " + string); // uncomment this to see commands sent to the server
-    	toServer.println(string);
-    	toServer.flush();
-    }
-
-}
+    
+} // end of Client class

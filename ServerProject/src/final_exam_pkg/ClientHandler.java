@@ -53,7 +53,7 @@ class ClientHandler extends Server implements Runnable, Observer {
 		try {
 			while ((input = fromClient.readLine()) != null) {
 //				System.out.println("From client: " + input); // uncomment this to see commands recieved from clients to console
-				if (input.contentEquals("initializeItemList") || input.contentEquals("removeObserver") || input.contentEquals("updateItemList")) { input += " " + clientID;}
+				if (input.contentEquals("initializeItemList") || input.contentEquals("removeObserver")) { input += " " + clientID;}
 				server.processRequest(input);
 			}
 		} catch (IOException e) {
