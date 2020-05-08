@@ -30,14 +30,16 @@ class Server extends Observable {
 		private String description;
 		private double minPrice;
 		private double currentBidPrice;
+		private double buyNowPrice;
 		private String highestBidderUsername;
 		private BigDecimal duration;
 		private String soldMessage;
 		
-		private Item (String name, String description, double minPrice, BigDecimal duration) {
+		private Item (String name, String description, double minPrice, double buyNowPrice, BigDecimal duration) {
 			this.name = name;
 			this.description = description;
 			this.minPrice = minPrice;
+			this.buyNowPrice = buyNowPrice;
 			this.currentBidPrice = 0.00;
 			this.highestBidderUsername = "N/A";
 			this.duration = duration; // this will be the duration in minutes
@@ -93,9 +95,11 @@ class Server extends Observable {
 //				System.out.println(description);
 				double minPrice = Double.valueOf(fileScanner.nextLine());
 //				System.out.println(minPrice);
+				double buyNowPrice = Double.valueOf(fileScanner.nextLine());
+//				System.out.println(buyNowPrice);
 				BigDecimal duration = new BigDecimal(Double.valueOf(fileScanner.nextLine()));
 //				System.out.println(duration);
-				itemList.add(new Item(name, description, minPrice, duration));
+				itemList.add(new Item(name, description, minPrice, buyNowPrice, duration));
 			}
 			fileScanner.close();
 			activeItemList.addAll(itemList);
@@ -145,26 +149,36 @@ class Server extends Observable {
 		Timer expirationUpdater = new Timer();
 		expirationUpdater.scheduleAtFixedRate(new TimerTask() {
 			public void run() {
-				for (Item item : activeItemList) {
-					if (item.duration.compareTo(BigDecimal.ZERO) == 0) {
-						System.out.println(item.name + " sold!");
-						if (item.highestBidderUsername.contentEquals("N/A")) {
-							item.soldMessage = "Item auction expired with no bidders!";
+				synchronized (activeItemListLock) {
+					for (Item item : activeItemList) {
+						if (item.duration.compareTo(BigDecimal.ZERO) == 0) { // auction timer for this item has expired
+							System.out.println(item.name + " sold!");
+							if (item.highestBidderUsername.contentEquals("N/A")) {
+								item.soldMessage = "Item auction expired with no bidders!";
+							}
+							else {
+								item.soldMessage = (item.name + " sold to " + item.highestBidderUsername + " for the final price of $" + item.currentBidPrice + "!");
+							}
+					  		serverObject.setChanged();
+					  		serverObject.notifyObservers("notifyItemSoldSuccessful|" + item.name + "|" + item.soldMessage);
 						}
-						else {
+						else if (item.currentBidPrice >= item.buyNowPrice) { // else, user has bid above the buy now threshold
+							System.out.println(item.name + " sold immediately to " + item.highestBidderUsername);
 							item.soldMessage = (item.name + " sold to " + item.highestBidderUsername + " for the final price of $" + item.currentBidPrice + "!");
+					  		serverObject.setChanged();
+					  		serverObject.notifyObservers("notifyItemSoldSuccessful|" + item.name + "|" + item.soldMessage);
+					  		item.duration = BigDecimal.ZERO;
+							expiredItemQueue.add(item);
+					  		serverObject.setChanged();
+					  		serverObject.notifyObservers("updateDurationSuccessful|" + item.name + "|" + item.duration);
 						}
-				  		serverObject.setChanged();
-				  		serverObject.notifyObservers("notifyItemSoldSuccessful|" + item.name + "|" + item.soldMessage);
 					}
-				}
-				while (!expiredItemQueue.isEmpty()) {
-					synchronized (activeItemListLock) {
+					while (!expiredItemQueue.isEmpty()) {
 						activeItemList.remove(expiredItemQueue.remove()); // check if this is causing the concurrent modification exception
 					}
 				}
 			}
-		}, 0, 500);
+		}, 0, 50);
 	}
 	
 
@@ -252,11 +266,11 @@ class Server extends Observable {
 		  		
 		   }
 	  }
-	  else { // else, input must contain pipe characters and must be in the format:  command|itemName|newBidValue|higestBidderUsername
+	  else { // else, input must contain pipe characters and must have data separated by pipe characters
 		  String[] inputArr = input.trim().split("\\|");
 		  switch (inputArr[0]) {
-		  	case "updateBidPrice":
-		  		for (Item item : itemList) {
+		  	case "updateBidPrice": // input in the format: updateBidPrice|itemName|newBidValue|higestBidderUsername
+		  		for (Item item : activeItemList) {
 		  			if (item.name.contentEquals(inputArr[1])) {
 		  				item.currentBidPrice = Double.parseDouble(inputArr[2]);
 		  				item.highestBidderUsername = new String(); item.highestBidderUsername += inputArr[3]; 
@@ -266,7 +280,18 @@ class Server extends Observable {
 		  			}
 		  		}
 				break;
-				
+//		  	case "sellItemNow":// input in the format: sellItemNow|itemName|boughtPrice|higestBidderUsername
+//		  		synchronized(activeItemListLock) {
+//		  			for (Item item: activeItemList) {
+//		  				if (item.name.contentEquals(inputArr[1])) {
+//		  					item.duration = BigDecimal.ZERO;
+//			  				item.currentBidPrice = Double.parseDouble(inputArr[2]);
+//			  				item.highestBidderUsername = new String(); item.highestBidderUsername += inputArr[3]; 
+//		  					break;
+//		  				}
+//		  			}
+//		  		}
+//				break;
 			default:
 		  }//end of switch
 	   }
@@ -281,7 +306,7 @@ class Server extends Observable {
 	private String itemListToString() {
 		String itemListString = "";
 	    for (Item item : itemList) {
-		    itemListString += item.name + "|" + item.description + "|" + String.valueOf(item.minPrice) + "|" + String.valueOf(item.currentBidPrice) + "|" + item.highestBidderUsername + "|" + String.valueOf(item.duration) + "|" + item.soldMessage + "|";
+		    itemListString += item.name + "|" + item.description + "|" + String.valueOf(item.minPrice) + "|" + String.valueOf(item.currentBidPrice) + "|" + String.valueOf(item.buyNowPrice) + "|" + item.highestBidderUsername + "|" + String.valueOf(item.duration) + "|" + item.soldMessage + "|";
 	    }
 	    return itemListString;
 	}
