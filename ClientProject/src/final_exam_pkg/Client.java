@@ -14,6 +14,7 @@ import java.util.Queue;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
+import javafx.animation.Animation.Status;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -42,12 +43,17 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.text.Font;
+import javafx.stage.PopupWindow.AnchorLocation;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import javafx.util.Pair;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -83,15 +89,24 @@ public class Client extends Application {
 	// constant data fields
 	private static final double MAX_WIDTH = Screen.getPrimary().getBounds().getMaxX();
 	private static final double MAX_HEIGHT = Screen.getPrimary().getBounds().getMaxY();
-	private static final DecimalFormat MONEY_FORMATTER = new DecimalFormat("#.##");
+	private static final DecimalFormat MONEY_FORMATTER = new DecimalFormat("#.00");
 	private static final BigDecimal TEN_SECONDS = new BigDecimal(0.175);
+	
+	// media data fields (should not be reset for each session)
+	private static MediaPlayer loginSoundPlayer = null;
+	private static MediaPlayer logOutSoundPlayer = null;
+	private static MediaPlayer errorSoundPlayer = null;
+	private static MediaPlayer clickSoundPlayer = null;
+	private static MediaPlayer addSoundPlayer = null;
+	private static MediaPlayer buySoundPlayer = null;
+	private static MediaPlayer bidSoundPlayer = null;
 	
 	// networking data fields
 	private static Socket socket;
 	private static BufferedReader fromServer;
 	private static PrintWriter toServer;
 	
-	//
+	// flags and data structure fields
 	private static boolean isIPFieldCleared = false;
 	private static String username = null;
 	private static ArrayList<Item> itemList = new ArrayList<Item> (); // look into OberservableArrayLists if u can figure out listeners
@@ -140,10 +155,41 @@ public class Client extends Application {
 	
 	@Override
 	public void start(Stage primaryStage) {
+		initializeMediaPlayers();
+		
 		// Generate initial login scene and place it on the primary stage
 		primaryStage.setTitle("Auction Login Page"); // Set the stage title 
 		primaryStage.setScene(generateNewLoginScene(primaryStage)); // Place the scene in the stage
 		primaryStage.show(); // Display the stage 
+	}
+	
+	/**
+	 * Helper function for initializing all media players used in the login and auction GUI.
+	 * 
+	 */
+	public void initializeMediaPlayers() {
+		// Load music files and initialize media players
+		String loginSoundFile = "src/final_exam_pkg/loginSound.wav";
+		Media loginSound = new Media(new File(loginSoundFile).toURI().toString());
+		loginSoundPlayer = new MediaPlayer(loginSound);
+		String logOutSoundFile = "src/final_exam_pkg/logOutSound.wav";
+		Media logOutSound = new Media(new File(logOutSoundFile).toURI().toString());
+		logOutSoundPlayer = new MediaPlayer(logOutSound);
+		String errorSoundFile = "src/final_exam_pkg/errorSound.wav";
+		Media errorSound = new Media(new File(errorSoundFile).toURI().toString());
+		errorSoundPlayer = new MediaPlayer(errorSound);
+		String menuClickSoundFile = "src/final_exam_pkg/menuClickSound.wav";
+		Media menuClickSound = new Media(new File(menuClickSoundFile).toURI().toString());
+		clickSoundPlayer = new MediaPlayer(menuClickSound);
+		String addSoundFile = "src/final_exam_pkg/addSound.wav";
+		Media addSound = new Media(new File(addSoundFile).toURI().toString());
+		addSoundPlayer = new MediaPlayer(addSound);
+		String buySoundFile = "src/final_exam_pkg/buySound.wav";
+		Media buySound = new Media(new File(buySoundFile).toURI().toString());
+		buySoundPlayer = new MediaPlayer(buySound);
+		String bidSoundFile = "src/final_exam_pkg/bidSound.wav";
+		Media bidSound = new Media(new File(bidSoundFile).toURI().toString());
+		bidSoundPlayer = new MediaPlayer(bidSound);
 	}
 	
 	
@@ -261,16 +307,22 @@ public class Client extends Application {
 				String password = passwordField.getText();
 				String hostIP = hostIPField.getText();
 
-				if (inputUsername.equals("")) {
+				if (hostIP.contentEquals("")) {
+					signInErrorMsg.setText("ERROR! Please enter a valid host IP address");
+		    		errorSoundPlayer.seek(Duration.ZERO);
+					errorSoundPlayer.play();
+					clearAllLoginFields(loginField, passwordField, hostIPField);
+				}
+				else if (inputUsername.equals("")) {
 					signInErrorMsg.setText("ERROR! Please enter a username");
+		    		errorSoundPlayer.seek(Duration.ZERO);
+					errorSoundPlayer.play();
 					clearAllLoginFields(loginField, passwordField, hostIPField);
 				}
 				else if (password.equals("")) {
 					signInErrorMsg.setText("ERROR! Please enter a password");
-					clearAllLoginFields(loginField, passwordField, hostIPField);
-				}
-				else if (hostIP.contentEquals("")) {
-					signInErrorMsg.setText("ERROR! Please enter a valid host IP address");
+		    		errorSoundPlayer.seek(Duration.ZERO);
+					errorSoundPlayer.play();
 					clearAllLoginFields(loginField, passwordField, hostIPField);
 				}
 				else { // else, none of the text-fields are empty		
@@ -282,14 +334,19 @@ public class Client extends Application {
 			    		while (!isItemListUpdated) {
 			    			Thread.yield();
 			    		} // wait until client item database is initialized before continuing
+			    		loginSoundPlayer.seek(Duration.ZERO);
+			    		loginSoundPlayer.play();
 			    		username = inputUsername;
 			    		primaryStage.setTitle("Auction Site"); 
 						primaryStage.setScene(generateNewAuctionScene(primaryStage)); 
 						primaryStage.setMaximized(true);
 						primaryStage.show();
 					} catch (Exception e) {
-						System.out.println("ERROR! Exception thrown since Server IP address is invalid.");
+						e.printStackTrace();
+//						System.out.println("ERROR! Exception thrown since Server IP address is invalid.");
 						signInErrorMsg.setText("ERROR! Server refused to connect.");
+			    		errorSoundPlayer.seek(Duration.ZERO);
+						errorSoundPlayer.play();
 						clearAllLoginFields(loginField, passwordField, hostIPField);
 					}
 				}
@@ -303,6 +360,8 @@ public class Client extends Application {
 
 				if (hostIP.contentEquals("")) {
 					signInErrorMsg.setText("ERROR! Please enter a valid host IP address");
+		    		errorSoundPlayer.seek(Duration.ZERO);
+					errorSoundPlayer.play();
 					clearAllLoginFields(loginField, passwordField, hostIPField);
 				}
 				else { // ip-field is not empty
@@ -314,13 +373,18 @@ public class Client extends Application {
 			    		while (!isItemListUpdated) {
 			    			Thread.yield();
 			    		}
+			    		loginSoundPlayer.seek(Duration.ZERO);
+			    		loginSoundPlayer.play();
 			    		username = "Guest";
 			    		primaryStage.setTitle("Auction Site"); 
 						primaryStage.setScene(generateNewAuctionScene(primaryStage));
 						primaryStage.setMaximized(true);
 						primaryStage.show();
 					} catch (Exception e) {
+						e.printStackTrace();
 						signInErrorMsg.setText("ERROR! Server refused to connect.");
+			    		errorSoundPlayer.seek(Duration.ZERO);
+						errorSoundPlayer.play();
 						clearAllLoginFields(loginField, passwordField, hostIPField);
 					}
 				}
@@ -330,6 +394,8 @@ public class Client extends Application {
 		quitButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
+	    		logOutSoundPlayer.seek(Duration.ZERO);
+	    		logOutSoundPlayer.play();
 				Platform.exit();
 				System.exit(0);
 			}
@@ -571,14 +637,27 @@ public class Client extends Application {
 		activeThreadList.add(updateWatchlistThread);
 		
 		
-		// ALL BUTTON HANDLERS ARE BELOW:
+		// ALL BUTTON AND NODE HANDLERS ARE BELOW:
 		//===========================================================================================================
+		// item drop-down menu handler
+		itemMenu.setOnMouseClicked(e -> {
+			clickSoundPlayer.seek(Duration.ZERO);
+			clickSoundPlayer.play();
+		});
+		if (itemMenu.getContextMenu() != null) {
+			itemMenu.getContextMenu().setOnAction(e -> {
+				clickSoundPlayer.seek(Duration.ZERO);
+				clickSoundPlayer.play();
+			});
+		}
 		// add item button-handler
 		addItemButton.setOnAction(new EventHandler<ActionEvent>() { // add-item button handler and use lambda expression instead of EventHandler
 			@Override
 			public void handle(ActionEvent event) {
 				String chosenItemName = itemMenu.getValue();
 				if (!watchlistItemNames.contains(chosenItemName)) { // item has not been added to watchlist yet -> add to watchlist
+					addSoundPlayer.seek(Duration.ZERO);
+					addSoundPlayer.play();
 					clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
 					Item chosenItem = null;
 					for (Item item: itemList) {
@@ -620,6 +699,8 @@ public class Client extends Application {
 				}
 				else { // else, item is already in watchlist window
 					addItemErrorMessage.setText("ERROR! " + chosenItemName + " is already added to the watchlist.");
+					errorSoundPlayer.seek(Duration.ZERO);
+					errorSoundPlayer.play();
 				}
 			}
 		});
@@ -633,22 +714,35 @@ public class Client extends Application {
 					if (item.name.contentEquals(chosenItemName)) {
 						if (item.duration.doubleValue() <= 0.00) { // item auction is closed
 							bidErrorMessage.setText("INVALID BID! Auction for this item has closed.");
+							errorSoundPlayer.seek(Duration.ZERO);
+							errorSoundPlayer.play();
+
 						}
 						else if (userBid <= item.minPrice) { // inputted bid is too low
 							bidErrorMessage.setText("INVALID BID! Your bid must be higher than the minimum bidding price.");
+							errorSoundPlayer.seek(Duration.ZERO);
+							errorSoundPlayer.play();
 						}
 						else if (userBid <= item.currentBidPrice) { // input bid is lower than current bid
 							bidErrorMessage.setText("INVALID BID! Your bid must be higher than the current bid.");
+							errorSoundPlayer.seek(Duration.ZERO);
+							errorSoundPlayer.play();
 						}
 						else { // userBid is a valid bid
 							clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
+							clickSoundPlayer.seek(Duration.ZERO);
+							clickSoundPlayer.play();
 							if (userBid >= item.buyNowPrice) {
 								sendToServer("updateBidPrice|" + chosenItemName + "|" + String.valueOf(userBid) + "|" + username);
+								buySoundPlayer.seek(Duration.ZERO);
+								buySoundPlayer.play();
 								bidErrorMessage.setText("BOUGHT ITEM SUCCESSFULLY!");
 								bidField.clear();
 							}
 							else {
 								sendToServer("updateBidPrice|" + chosenItemName + "|" + String.valueOf(userBid) + "|" + username);
+								bidSoundPlayer.seek(Duration.ZERO);
+								bidSoundPlayer.play();
 								bidErrorMessage.setText("BID SUCCESSFUL! You are now the highest bidder.");
 								bidField.clear();
 							}
@@ -662,6 +756,8 @@ public class Client extends Application {
 		logOutButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
+	    		logOutSoundPlayer.seek(Duration.ZERO);
+	    		logOutSoundPlayer.play();
 				// try to set flags so that all the helper threads finish executing
 				sessionDone = true;
 				for (Thread t : activeThreadList) {
@@ -867,7 +963,13 @@ public class Client extends Application {
     			for (Item item : itemList) {
     				if (item.name.contentEquals(itemNameToNotify)) {
     					item.soldMessage = soldMessage;
-    					soldMessageQueue.add(item.name + "'s" + soldMessage.replace("Item", ""));
+    					if (soldMessage.contains("Item auction expired with no bidders!")) {
+        					soldMessageQueue.add(item.name + "'s" + soldMessage.replace("Item", ""));
+    					}
+    					else {
+        					soldMessageQueue.add(soldMessage);
+    					}
+
         				break;
     				}
     			}
