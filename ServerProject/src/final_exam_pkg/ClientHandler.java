@@ -19,8 +19,6 @@ import java.util.Observer;
 import java.util.ArrayList;
 import java.util.Observable;
 
-import org.json.*;;
-
 class ClientHandler extends Server implements Runnable, Observer {
 	private Server server;
 	protected Socket clientSocket;
