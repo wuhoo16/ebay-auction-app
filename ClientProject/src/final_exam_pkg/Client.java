@@ -62,30 +62,6 @@ import java.net.Socket;
 import java.text.DecimalFormat;
 
 public class Client extends Application {
-	// inner Item class definition
-	static class Item {
-		private String name;
-		private String description;
-		private double minPrice;
-		private double currentBidPrice;
-		private double buyNowPrice;
-		private String highestBidderUsername;
-		private BigDecimal duration;
-		private String soldMessage;
-		
-		// new parameterized constructor - Items should only be instiantiated by calling this constructor 
-		private Item (String name, String description, double minPrice, double currentBidPrice, double buyNowPrice, String highestBidderUsername, BigDecimal duration, String soldMsg) {
-			this.name = name;
-			this.description = description;
-			this.minPrice = minPrice;
-			this.currentBidPrice = currentBidPrice;
-			this.buyNowPrice = buyNowPrice;
-			this.highestBidderUsername = new String(); this.highestBidderUsername += highestBidderUsername;
-			this.duration = duration;
-			this.soldMessage = soldMsg;
-		}
-	}
-	
 	// constant data fields
 	private static final double MAX_WIDTH = Screen.getPrimary().getBounds().getMaxX();
 	private static final double MAX_HEIGHT = Screen.getPrimary().getBounds().getMaxY();
@@ -94,7 +70,7 @@ public class Client extends Application {
 	
 	// media data fields (should not be reset for each session)
 	private static MediaPlayer loginSoundPlayer = null;
-	private static MediaPlayer logOutSoundPlayer = null;
+	private static MediaPlayer quitSoundPlayer = null;
 	private static MediaPlayer errorSoundPlayer = null;
 	private static MediaPlayer clickSoundPlayer = null;
 	private static MediaPlayer addSoundPlayer = null;
@@ -172,9 +148,9 @@ public class Client extends Application {
 		String loginSoundFile = "src/final_exam_pkg/loginSound.wav";
 		Media loginSound = new Media(new File(loginSoundFile).toURI().toString());
 		loginSoundPlayer = new MediaPlayer(loginSound);
-		String logOutSoundFile = "src/final_exam_pkg/logOutSound.wav";
-		Media logOutSound = new Media(new File(logOutSoundFile).toURI().toString());
-		logOutSoundPlayer = new MediaPlayer(logOutSound);
+		String quitSoundFile = "src/final_exam_pkg/quitSound.wav";
+		Media quitSound = new Media(new File(quitSoundFile).toURI().toString());
+		quitSoundPlayer = new MediaPlayer(quitSound);
 		String errorSoundFile = "src/final_exam_pkg/errorSound.wav";
 		Media errorSound = new Media(new File(errorSoundFile).toURI().toString());
 		errorSoundPlayer = new MediaPlayer(errorSound);
@@ -394,8 +370,8 @@ public class Client extends Application {
 		quitButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-	    		logOutSoundPlayer.seek(Duration.ZERO);
-	    		logOutSoundPlayer.play();
+	    		quitSoundPlayer.seek(Duration.ZERO);
+	    		quitSoundPlayer.play();
 				Platform.exit();
 				System.exit(0);
 			}
@@ -610,13 +586,13 @@ public class Client extends Application {
 					while (!soldMessageQueue.isEmpty()) {
 						String soldMessage = soldMessageQueue.remove();
 						Platform.runLater(() -> {
-							sellWindow.getItems().add(soldMessage);
+							sellWindow.getItems().add(soldMessage.replace(username, "you"));
 						});
 					}
 					while (!bidMessageQueue.isEmpty()) {
 						String bidMessage = bidMessageQueue.remove();
 						Platform.runLater(() -> {
-							bidWindow.getItems().add(bidMessage);
+							bidWindow.getItems().add(bidMessage.replace(username, "you"));
 						});
 					}
 					try {
@@ -756,8 +732,8 @@ public class Client extends Application {
 		logOutButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-	    		logOutSoundPlayer.seek(Duration.ZERO);
-	    		logOutSoundPlayer.play();
+	    		quitSoundPlayer.seek(Duration.ZERO);
+	    		quitSoundPlayer.play();
 				// try to set flags so that all the helper threads finish executing
 				sessionDone = true;
 				for (Thread t : activeThreadList) {

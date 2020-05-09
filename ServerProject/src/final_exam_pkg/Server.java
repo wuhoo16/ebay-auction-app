@@ -25,27 +25,6 @@ import java.util.TimerTask;
 
 class Server extends Observable {
 	// data fields:
-	class Item {
-		private String name;
-		private String description;
-		private double minPrice;
-		private double currentBidPrice;
-		private double buyNowPrice;
-		private String highestBidderUsername;
-		private BigDecimal duration;
-		private String soldMessage;
-		
-		private Item (String name, String description, double minPrice, double buyNowPrice, BigDecimal duration) {
-			this.name = name;
-			this.description = description;
-			this.minPrice = minPrice;
-			this.buyNowPrice = buyNowPrice;
-			this.currentBidPrice = 0.00;
-			this.highestBidderUsername = "N/A";
-			this.duration = duration; // this will be the duration in minutes
-			this.soldMessage = "Item is up for sale!";
-		}
-	}
 	final static BigDecimal ONE_SECOND = new BigDecimal(1.0).divide(new BigDecimal(60.0), 100, RoundingMode.HALF_UP);
 	private Integer numClients = 0;
 	private ArrayList<Item> itemList = new ArrayList<Item>();
@@ -67,7 +46,7 @@ class Server extends Observable {
 	 */
 	private void startServer() {
 	    try {
-	    	getItemsFromFile();
+	    	initializeServerListsFromDatabase();
 	    	startServerTimer();
 	    	startExpirationTimer();
 	    	setUpSocketConnections();
@@ -79,35 +58,14 @@ class Server extends Observable {
 	
 
 	/**
-	 * Reads item data from the input text file named "AuctionItemsInput" and stores into an ArrayList, itemList.
-	 * NOTE: This method expects the input file to have the following format for each item: 
-	 * Item name, item description, minimum bidding price, and item auction duration, all on SEPARATE LINES.
+	 * Creates a SQLiteConnector object to initialize the two server arraylists from the SQLite database named "itemDatabase".
+	 * Expects the SQLiteConnector method getAllDatabaseItems to correctly return an arraylist of the items.
 	 */
-	private void getItemsFromFile() {
-		File inputFile = new File("src/AuctionItemsInput");
-		try {
-			Scanner fileScanner = new Scanner(inputFile);
-			
-			while (fileScanner.hasNextLine()) {
-				String name = fileScanner.nextLine();
-//				System.out.println(name);
-				String description = fileScanner.nextLine();
-//				System.out.println(description);
-				double minPrice = Double.valueOf(fileScanner.nextLine());
-//				System.out.println(minPrice);
-				double buyNowPrice = Double.valueOf(fileScanner.nextLine());
-//				System.out.println(buyNowPrice);
-				BigDecimal duration = new BigDecimal(Double.valueOf(fileScanner.nextLine()));
-//				System.out.println(duration);
-				itemList.add(new Item(name, description, minPrice, buyNowPrice, duration));
-			}
-			fileScanner.close();
-			activeItemList.addAll(itemList);
-		} catch (FileNotFoundException e) {
-			System.out.println("ERROR! Specified input file does not exist!");
-		} catch (NumberFormatException e) {
-			System.out.println("ERROR! Input file is in the wrong format. Make sure all prices and durations are double types.");
-		}
+	private void initializeServerListsFromDatabase() {
+    	SQLiteConnecter SQLDatabaseReader = new SQLiteConnecter();
+    	SQLDatabaseReader.connect();
+    	itemList.addAll(SQLDatabaseReader.getAllDatabaseItems());
+    	activeItemList.addAll(itemList);
 	}
 
 	
@@ -227,18 +185,6 @@ class Server extends Observable {
 		  		 outputString += "initializeItemListSuccessful|" + itemListToString();
 		  		 handlerToInit.sendToClient(outputString);
 				 break;
-				
-//		  	case "updateItemList":
-//		  		int clientIDToUpdate = Integer.parseInt(inputArr[1]);
-//		  		ClientHandler handlerToUpdate = null;
-//		  		for (ClientHandler observer : observerList) {
-//		  			if (observer.clientID == clientIDToUpdate) {
-//		  				handlerToUpdate = observer;
-//		  			}
-//		  		}
-//		  		outputString += "updateItemListSuccessful|" + itemListToString();
-//		  		handlerToUpdate.sendToClient(outputString);
-//		  		break;
 		  		
 		  	 case "removeObserver":
 		  		 int clientID = Integer.parseInt(inputArr[1]);
@@ -280,18 +226,7 @@ class Server extends Observable {
 		  			}
 		  		}
 				break;
-//		  	case "sellItemNow":// input in the format: sellItemNow|itemName|boughtPrice|higestBidderUsername
-//		  		synchronized(activeItemListLock) {
-//		  			for (Item item: activeItemList) {
-//		  				if (item.name.contentEquals(inputArr[1])) {
-//		  					item.duration = BigDecimal.ZERO;
-//			  				item.currentBidPrice = Double.parseDouble(inputArr[2]);
-//			  				item.highestBidderUsername = new String(); item.highestBidderUsername += inputArr[3]; 
-//		  					break;
-//		  				}
-//		  			}
-//		  		}
-//				break;
+
 			default:
 		  }//end of switch
 	   }

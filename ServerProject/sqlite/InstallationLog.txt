@@ -1,0 +1,264 @@
+************************************* Invoked: Fri May 8 22:12:32 2020
+[0] Arguments: C:\Users\Andy Wu\Downloads\InstallSQLiteStudio-3.2.1.exe
+[9] Operations sanity check succeeded.
+[3105] Loaded control script ":/metadata/installer-config/controller_qs.qs"
+[3105] Using control script: ":/metadata/installer-config/controller_qs.qs"
+[3164] Control script callback "IntroductionPageCallback" does not exist.
+[5224] Warning: :20: TypeError: Cannot call method 'connect' of undefined (:20, )
+[5230] Control script callback "TargetDirectoryPageCallback" does not exist.
+[25652] Created warning message box "OverwriteTargetDirectory": "Warning", "You have selected an existing, non-empty directory for installation.\nNote that it will be completely wiped on uninstallation of this application.\nIt is not advisable to install into this directory as installation might fail.\nDo you want to continue?"
+[42134] Control script callback "ComponentSelectionPageCallback" does not exist.
+[45442] Tmp and install directories are on the same volume. Volume mount point: "C:\\" Free space available: "20.35 GiB"
+[45442] Installation space required: "47.66 MiB" Temporary space required: "0.00 bytes" Local repository size: "0.00 bytes"
+[45442] Control script callback "ReadyForInstallationPageCallback" does not exist.
+[48420] Control script callback "PerformInstallationPageCallback" does not exist.
+[48453] backup  operation: Mkdir
+[48453] 	- arguments: C:/Users/Andy Wu/Desktop/Java Eclipse Files/EE422C/Program7_FinalProject_ServerClientAuction/ServerProject/src/sqlite
+[48454] Done
+[48454] perform  operation: Mkdir
+[48454] 	- arguments: C:/Users/Andy Wu/Desktop/Java Eclipse Files/EE422C/Program7_FinalProject_ServerClientAuction/ServerProject/src/sqlite
+[48455] Done
+[48455] Install size: 22 components
+[48506] backup io.qt operation: Extract
+[48506] 	- arguments: installer://io.qt/5.10.0qt.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[48506] Done
+[48506] perform io.qt operation: Extract
+[48506] 	- arguments: installer://io.qt/5.10.0qt.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49237] Done
+[49239] backup pl.com.salsoft.sqlitestudio operation: Extract
+[49239] 	- arguments: installer://pl.com.salsoft.sqlitestudio/3.2.1sqlitestudio.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49239] Done
+[49239] perform pl.com.salsoft.sqlitestudio operation: Extract
+[49239] 	- arguments: installer://pl.com.salsoft.sqlitestudio/3.2.1sqlitestudio.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49471] Done
+[49472] backup pl.com.salsoft.sqlitestudio operation: CreateShortcut
+[49472] 	- arguments: C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe, C:\Users\Andy Wu\AppData\Roaming\Microsoft\Windows\Start Menu\Programs/SQLiteStudio/SQLiteStudio.lnk, workingDirectory=C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite, iconPath=C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe, iconId=0, description=SQLiteStudio
+[49472] Done
+[49472] perform pl.com.salsoft.sqlitestudio operation: CreateShortcut
+[49472] 	- arguments: C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe, C:\Users\Andy Wu\AppData\Roaming\Microsoft\Windows\Start Menu\Programs/SQLiteStudio/SQLiteStudio.lnk
+[49504] Done
+[49504] backup pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49504] 	- arguments: db, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.db
+[49504] Done
+[49505] perform pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49505] 	- arguments: db, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.db
+[49510] Done
+[49510] backup pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49510] 	- arguments: db3, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.db3
+[49510] Done
+[49510] perform pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49510] 	- arguments: db3, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.db3
+[49516] Done
+[49516] backup pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49516] 	- arguments: sqlite, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.sqlite
+[49516] Done
+[49516] perform pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49516] 	- arguments: sqlite, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.sqlite
+[49520] Done
+[49520] backup pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49520] 	- arguments: sqlite3, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.sqlite3
+[49520] Done
+[49520] perform pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49520] 	- arguments: sqlite3, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.sqlite3
+[49525] Done
+[49525] backup pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49525] 	- arguments: sdb, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.sdb
+[49525] Done
+[49526] perform pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49526] 	- arguments: sdb, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.sdb
+[49530] Done
+[49530] backup pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49530] 	- arguments: s3db, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.s3db
+[49530] Done
+[49531] perform pl.com.salsoft.sqlitestudio operation: RegisterFileType
+[49531] 	- arguments: s3db, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe '%1', SQLite database, application/octet-stream, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite/SQLiteStudio.exe,0, ProgId=SQLiteStudio.s3db
+[49535] Done
+[49538] backup pl.com.salsoft.sqlitestudio.plugins.dbandroid operation: Extract
+[49538] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbandroid/1.2.1DbAndroid.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49538] Done
+[49538] perform pl.com.salsoft.sqlitestudio.plugins.dbandroid operation: Extract
+[49538] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbandroid/1.2.1DbAndroid.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49549] Done
+[49551] backup pl.com.salsoft.sqlitestudio.plugins.csvexport operation: Extract
+[49551] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.csvexport/1.0.5CsvExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49551] Done
+[49551] perform pl.com.salsoft.sqlitestudio.plugins.csvexport operation: Extract
+[49551] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.csvexport/1.0.5CsvExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49555] Done
+[49557] backup pl.com.salsoft.sqlitestudio.plugins.csvimport operation: Extract
+[49557] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.csvimport/1.0.5CsvImport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49557] Done
+[49557] perform pl.com.salsoft.sqlitestudio.plugins.csvimport operation: Extract
+[49557] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.csvimport/1.0.5CsvImport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49561] Done
+[49564] backup pl.com.salsoft.sqlitestudio.plugins.configmigration operation: Extract
+[49564] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.configmigration/1.0.3ConfigMigration.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49564] Done
+[49564] perform pl.com.salsoft.sqlitestudio.plugins.configmigration operation: Extract
+[49564] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.configmigration/1.0.3ConfigMigration.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49572] Done
+[49574] backup pl.com.salsoft.sqlitestudio.plugins.htmlexport operation: Extract
+[49574] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.htmlexport/1.0.2HtmlExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49574] Done
+[49574] perform pl.com.salsoft.sqlitestudio.plugins.htmlexport operation: Extract
+[49574] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.htmlexport/1.0.2HtmlExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49580] Done
+[49582] backup pl.com.salsoft.sqlitestudio.plugins.multieditorimage operation: Extract
+[49582] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.multieditorimage/1.0.0MultiEditorImage.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49582] Done
+[49582] perform pl.com.salsoft.sqlitestudio.plugins.multieditorimage operation: Extract
+[49582] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.multieditorimage/1.0.0MultiEditorImage.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49587] Done
+[49589] backup pl.com.salsoft.sqlitestudio.plugins.jsonexport operation: Extract
+[49589] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.jsonexport/1.0.2JsonExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49589] Done
+[49589] perform pl.com.salsoft.sqlitestudio.plugins.jsonexport operation: Extract
+[49589] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.jsonexport/1.0.2JsonExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49594] Done
+[49596] backup pl.com.salsoft.sqlitestudio.plugins.pdfexport operation: Extract
+[49596] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.pdfexport/1.0.3PdfExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49596] Done
+[49596] perform pl.com.salsoft.sqlitestudio.plugins.pdfexport operation: Extract
+[49596] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.pdfexport/1.0.3PdfExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49603] Done
+[49604] backup pl.com.salsoft.sqlitestudio.plugins.printing operation: Extract
+[49604] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.printing/1.0.3Printing.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49604] Done
+[49604] perform pl.com.salsoft.sqlitestudio.plugins.printing operation: Extract
+[49604] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.printing/1.0.3Printing.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49608] Done
+[49610] backup pl.com.salsoft.sqlitestudio.plugins.regexpimport operation: Extract
+[49610] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.regexpimport/1.0.2RegExpImport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49610] Done
+[49610] perform pl.com.salsoft.sqlitestudio.plugins.regexpimport operation: Extract
+[49610] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.regexpimport/1.0.2RegExpImport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49614] Done
+[49616] backup pl.com.salsoft.sqlitestudio.plugins.sqlenterpriseformatter operation: Extract
+[49616] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.sqlenterpriseformatter/1.0.6SqlEnterpriseFormatter.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49616] Done
+[49616] perform pl.com.salsoft.sqlitestudio.plugins.sqlenterpriseformatter operation: Extract
+[49616] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.sqlenterpriseformatter/1.0.6SqlEnterpriseFormatter.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49624] Done
+[49625] backup pl.com.salsoft.sqlitestudio.plugins.sqlexport operation: Extract
+[49625] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.sqlexport/1.1.2SqlExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49625] Done
+[49626] perform pl.com.salsoft.sqlitestudio.plugins.sqlexport operation: Extract
+[49626] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.sqlexport/1.1.2SqlExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49630] Done
+[49631] backup pl.com.salsoft.sqlitestudio.plugins.sqlformattersimple operation: Extract
+[49631] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.sqlformattersimple/1.0.1SqlFormatterSimple.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49631] Done
+[49631] perform pl.com.salsoft.sqlitestudio.plugins.sqlformattersimple operation: Extract
+[49631] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.sqlformattersimple/1.0.1SqlFormatterSimple.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49635] Done
+[49636] backup pl.com.salsoft.sqlitestudio.plugins.dbsqlitecipher operation: Extract
+[49636] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbsqlitecipher/1.1.1DbSqliteCipher.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49636] Done
+[49636] perform pl.com.salsoft.sqlitestudio.plugins.dbsqlitecipher operation: Extract
+[49636] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbsqlitecipher/1.1.1DbSqliteCipher.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49697] Done
+[49700] backup pl.com.salsoft.sqlitestudio.plugins.dbsqlite2 operation: Extract
+[49700] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbsqlite2/1.0.6DbSqlite2.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49700] Done
+[49700] perform pl.com.salsoft.sqlitestudio.plugins.dbsqlite2 operation: Extract
+[49700] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbsqlite2/1.0.6DbSqlite2.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49715] Done
+[49718] backup pl.com.salsoft.sqlitestudio.plugins.dbsqlitesystemdata operation: Extract
+[49718] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbsqlitesystemdata/1.0.0DbSqliteSystemData.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49718] Done
+[49719] perform pl.com.salsoft.sqlitestudio.plugins.dbsqlitesystemdata operation: Extract
+[49719] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbsqlitesystemdata/1.0.0DbSqliteSystemData.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49779] Done
+[49787] backup pl.com.salsoft.sqlitestudio.plugins.scriptingtcl operation: Extract
+[49787] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.scriptingtcl/1.0.3ScriptingTcl.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49788] Done
+[49788] perform pl.com.salsoft.sqlitestudio.plugins.scriptingtcl operation: Extract
+[49788] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.scriptingtcl/1.0.3ScriptingTcl.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49857] Done
+[49859] backup pl.com.salsoft.sqlitestudio.plugins.dbsqlitewx operation: Extract
+[49859] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbsqlitewx/1.0.1DbSqliteWx.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49859] Done
+[49859] perform pl.com.salsoft.sqlitestudio.plugins.dbsqlitewx operation: Extract
+[49859] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.dbsqlitewx/1.0.1DbSqliteWx.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49902] Done
+[49904] backup pl.com.salsoft.sqlitestudio.plugins.xmlexport operation: Extract
+[49904] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.xmlexport/1.0.2XmlExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49904] Done
+[49904] perform pl.com.salsoft.sqlitestudio.plugins.xmlexport operation: Extract
+[49904] 	- arguments: installer://pl.com.salsoft.sqlitestudio.plugins.xmlexport/1.0.2XmlExport.7z, C:\Users\Andy Wu\Desktop\Java Eclipse Files\EE422C\Program7_FinalProject_ServerClientAuction\ServerProject\src\sqlite
+[49911] Done
+[49920] Writing maintenance tool: "C:\\Users\\Andy Wu\\Desktop\\Java Eclipse Files\\EE422C\\Program7_FinalProject_ServerClientAuction\\ServerProject\\src\\sqlite/UpdateSQLiteStudio.exe.new"
+[50011] Wrote permissions for maintenance tool.
+[50246] Maintenance tool restart: false.
+[50256] Warning: QString::arg: Argument missing: Run SQLiteStudio, SQLiteStudio
+[50256] Control script callback "FinishedPageCallback" does not exist.
+[53342] starting "C:\\Users\\Andy Wu\\Desktop\\Java Eclipse Files\\EE422C\\Program7_FinalProject_ServerClientAuction\\ServerProject\\src\\sqlite/SQLiteStudio.exe" ()
+************************************* Invoked: Fri May 8 22:13:29 2020
+[0] Operations sanity check succeeded.
+[2200] addDownloadable "XmlExport.7z"
+[2200] addDownloadable "Printing.7z"
+[2200] addDownloadable "DbSqliteCipher.7z"
+[2200] addDownloadable "DbSqlite2.7z"
+[2200] addDownloadable "DbSqliteWx.7z"
+[2200] addDownloadable "CsvExport.7z"
+[2200] addDownloadable "RegExpImport.7z"
+[2201] addDownloadable "DbSqliteSystemData.7z"
+[2201] addDownloadable "DbAndroid.7z"
+[2201] addDownloadable "CsvImport.7z"
+[2201] addDownloadable "SqlEnterpriseFormatter.7z"
+[2201] addDownloadable "SqlFormatterSimple.7z"
+[2201] addDownloadable "ConfigMigration.7z"
+[2202] addDownloadable "qt.7z"
+[2202] addDownloadable "MultiEditorImage.7z"
+[2202] addDownloadable "SqlExport.7z"
+[2202] addDownloadable "JsonExport.7z"
+[2202] addDownloadable "HtmlExport.7z"
+[2202] addDownloadable "sqlitestudio.7z"
+[2202] addDownloadable "PdfExport.7z"
+[2202] addDownloadable "ScriptingTcl.7z"
+************************************* Invoked: Fri May 8 23:28:42 2020
+[0] Operations sanity check succeeded.
+[3144] addDownloadable "DbAndroid.7z"
+[3145] addDownloadable "SqlExport.7z"
+[3145] addDownloadable "DbSqliteSystemData.7z"
+[3147] addDownloadable "qt.7z"
+[3147] addDownloadable "JsonExport.7z"
+[3147] addDownloadable "DbSqliteCipher.7z"
+[3147] addDownloadable "SqlEnterpriseFormatter.7z"
+[3147] addDownloadable "PdfExport.7z"
+[3147] addDownloadable "DbSqlite2.7z"
+[3147] addDownloadable "Printing.7z"
+[3147] addDownloadable "HtmlExport.7z"
+[3147] addDownloadable "ScriptingTcl.7z"
+[3147] addDownloadable "XmlExport.7z"
+[3147] addDownloadable "MultiEditorImage.7z"
+[3147] addDownloadable "RegExpImport.7z"
+[3148] addDownloadable "CsvExport.7z"
+[3148] addDownloadable "ConfigMigration.7z"
+[3148] addDownloadable "SqlFormatterSimple.7z"
+[3148] addDownloadable "CsvImport.7z"
+[3148] addDownloadable "DbSqliteWx.7z"
+[3148] addDownloadable "sqlitestudio.7z"
+************************************* Invoked: Sat May 9 12:40:09 2020
+[0] Operations sanity check succeeded.
+[2362] addDownloadable "ConfigMigration.7z"
+[2363] addDownloadable "qt.7z"
+[2363] addDownloadable "SqlExport.7z"
+[2363] addDownloadable "HtmlExport.7z"
+[2363] addDownloadable "DbSqliteWx.7z"
+[2363] addDownloadable "CsvImport.7z"
+[2363] addDownloadable "DbAndroid.7z"
+[2363] addDownloadable "RegExpImport.7z"
+[2363] addDownloadable "CsvExport.7z"
+[2363] addDownloadable "MultiEditorImage.7z"
+[2363] addDownloadable "JsonExport.7z"
+[2363] addDownloadable "SqlFormatterSimple.7z"
+[2363] addDownloadable "Printing.7z"
+[2363] addDownloadable "SqlEnterpriseFormatter.7z"
+[2363] addDownloadable "ScriptingTcl.7z"
+[2364] addDownloadable "DbSqliteCipher.7z"
+[2364] addDownloadable "DbSqliteSystemData.7z"
+[2364] addDownloadable "PdfExport.7z"
+[2364] addDownloadable "XmlExport.7z"
+[2364] addDownloadable "sqlitestudio.7z"
+[2364] addDownloadable "DbSqlite2.7z"
