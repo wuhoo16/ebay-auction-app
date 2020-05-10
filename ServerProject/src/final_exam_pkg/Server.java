@@ -7,11 +7,8 @@
  */
 package final_exam_pkg;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -19,7 +16,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Observable;
 import java.util.Queue;
-import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -110,7 +106,7 @@ class Server extends Observable {
 				synchronized (activeItemListLock) {
 					for (Item item : activeItemList) {
 						if (item.duration.compareTo(BigDecimal.ZERO) == 0) { // auction timer for this item has expired
-							System.out.println(item.name + " sold!");
+//							System.out.println(item.name + " sold!"); // uncomment this to print all sales to console
 							if (item.highestBidderUsername.contentEquals("N/A")) {
 								item.soldMessage = "Item auction expired with no bidders!";
 							}
@@ -121,7 +117,7 @@ class Server extends Observable {
 					  		serverObject.notifyObservers("notifyItemSoldSuccessful|" + item.name + "|" + item.soldMessage);
 						}
 						else if (item.currentBidPrice >= item.buyNowPrice) { // else, user has bid above the buy now threshold
-							System.out.println(item.name + " sold immediately to " + item.highestBidderUsername);
+//							System.out.println(item.name + " sold immediately to " + item.highestBidderUsername); // uncomment this to print all buy-now transactions
 							item.soldMessage = (item.name + " sold to " + item.highestBidderUsername + " for the final price of $" + item.currentBidPrice + "!");
 					  		serverObject.setChanged();
 					  		serverObject.notifyObservers("notifyItemSoldSuccessful|" + item.name + "|" + item.soldMessage);
@@ -151,7 +147,7 @@ class Server extends Observable {
 	    while (true) {
 	    	// listen and accept any client connection requests
 	    	Socket clientSocket = serverSocket.accept();
-	    	System.out.println("Connecting to client... " + clientSocket);
+	    	System.out.println("Connecting to client #" + numClients + " through " + clientSocket);
 	        
 	    	// Create a ClientHandler for each client and starts a new thread for each clienthandler
 	    	ClientHandler handler = new ClientHandler(this, clientSocket, numClients);
@@ -192,6 +188,7 @@ class Server extends Observable {
 		  		 for (ClientHandler observer : observerList) {
 		  		 	 if (observer.clientID == clientID) {
 		  				 handlerToRemove = observer;
+		  				 break;
 		  			 }
 		  		 }
 				 try {
@@ -200,8 +197,7 @@ class Server extends Observable {
 					 handlerToRemove.fromClient.close();
 					 handlerToRemove.clientSocket.close();
 				 } catch (IOException e) {
-					 System.out.println("Closing client's server-socket threw IOException.");
-					 e.printStackTrace();
+					 System.out.println("Closing server-socket threw IOException.");
 				 }
 		  		 this.deleteObserver(handlerToRemove);
 		  		 observerList.remove(handlerToRemove);

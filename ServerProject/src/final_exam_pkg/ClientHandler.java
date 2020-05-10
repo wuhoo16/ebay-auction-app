@@ -55,9 +55,9 @@ class ClientHandler extends Server implements Runnable, Observer {
 				server.processRequest(input);
 			}
 		} catch (IOException e) {
-//			System.out.println("Client #" + clientID + "'s socket has closed and input stream no longer exists");
+			// socket connection no longer exists to client
 		} finally {
-			System.out.println("Client #" + clientID + " has disconnected from the server.");
+			System.out.println("Client #" + clientID + " has left the server.");
 		}
 	}
 

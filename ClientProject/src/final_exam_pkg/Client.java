@@ -14,39 +14,29 @@ import java.util.Queue;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
-import javafx.animation.Animation.Status;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.event.EventHandler;
-import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.PasswordField;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.text.Font;
-import javafx.stage.PopupWindow.AnchorLocation;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -74,6 +64,7 @@ public class Client extends Application {
 	private static MediaPlayer errorSoundPlayer = null;
 	private static MediaPlayer clickSoundPlayer = null;
 	private static MediaPlayer addSoundPlayer = null;
+	private static MediaPlayer removeSoundPlayer = null;
 	private static MediaPlayer buySoundPlayer = null;
 	private static MediaPlayer bidSoundPlayer = null;
 	
@@ -160,6 +151,9 @@ public class Client extends Application {
 		String addSoundFile = "src/final_exam_pkg/addSound.wav";
 		Media addSound = new Media(new File(addSoundFile).toURI().toString());
 		addSoundPlayer = new MediaPlayer(addSound);
+		String removeSoundFile = "src/final_exam_pkg/removeSound.wav";
+		Media removeSound = new Media(new File(removeSoundFile).toURI().toString());
+		removeSoundPlayer = new MediaPlayer(removeSound);
 		String buySoundFile = "src/final_exam_pkg/buySound.wav";
 		Media buySound = new Media(new File(buySoundFile).toURI().toString());
 		buySoundPlayer = new MediaPlayer(buySound);
@@ -230,6 +224,7 @@ public class Client extends Application {
 		
 		// borderPane CENTER nodes (All textfields and sign-in buttons)
 		TextField hostIPField = new TextField(); // IP field node
+		hostIPField.setPromptText("Host IP address");
 		hostIPField.setText("127.0.0.1"); // set the server ip address to be local machine by default
 		hostIPField.setStyle("-fx-text-fill: grey; font-style: italic");
 		hostIPField.setFont(new Font("Segoe UI", 12));
@@ -248,7 +243,7 @@ public class Client extends Application {
 		loginField.setPromptText("Email or username");
 		loginField.setStyle("-fx-text-fill: grey; font-style: italic");
 		loginField.setFont(new Font("Segoe UI", 12));
-		TextField passwordField = new TextField(); // password field
+		TextField passwordField = new PasswordField(); // password field
 		passwordField.setPromptText("Password");
 		passwordField.setStyle("-fx-text-fill: grey; font-style: italic");
 		passwordField.setFont(new Font("Segoe UI", 12));
@@ -318,8 +313,6 @@ public class Client extends Application {
 						primaryStage.setMaximized(true);
 						primaryStage.show();
 					} catch (Exception e) {
-						e.printStackTrace();
-//						System.out.println("ERROR! Exception thrown since Server IP address is invalid.");
 						signInErrorMsg.setText("ERROR! Server refused to connect.");
 			    		errorSoundPlayer.seek(Duration.ZERO);
 						errorSoundPlayer.play();
@@ -413,15 +406,17 @@ public class Client extends Application {
 		});
 		
 		
-		// CONTROLLER ROW 1 NODES: Drop-down menu + addItem button + addItemErrorMessage
+		// CONTROLLER ROW 1 NODES: Drop-down menu + addItem button + removeItem button + addItemErrorMessage
 		ChoiceBox<String> itemMenu = new ChoiceBox<String>(); // item menu node
-		itemMenu.setPrefHeight(35);
+		itemMenu.setPrefHeight(45);
 		itemMenu.getItems().addAll(itemNamesList);
 		Button addItemButton = new Button("Add this item to watchlist"); 
-		addItemButton.setPrefHeight(35);
+		addItemButton.setPrefHeight(45);
+		Button removeItemButton = new Button("Remove item from watchlist"); 
+		removeItemButton.setPrefHeight(45);
 		Label addItemErrorMessage = new Label();
 		addItemErrorMessage.setStyle("-fx-text-fill: red");
-		HBox controllerRow1 = new HBox(5, itemMenu, addItemButton, addItemErrorMessage);  // controller node
+		HBox controllerRow1 = new HBox(5, itemMenu, addItemButton, removeItemButton, addItemErrorMessage);  // controller node
 		controllerRow1.setAlignment(Pos.CENTER);
 		
 		
@@ -430,7 +425,7 @@ public class Client extends Application {
 		bidInstruction.setStyle("-fx-text-fill: black; -fx-font-size: 18px");
 		bidInstruction.setAlignment(Pos.CENTER);
 		TextField bidField = new TextField();
-		bidField.setPrefHeight(35);
+		bidField.setPrefHeight(45);
 		Pattern pattern = Pattern.compile("\\d*\\.?\\d{0,2}");
 		@SuppressWarnings("unchecked")
 		TextFormatter formatter = new TextFormatter((UnaryOperator<TextFormatter.Change>) change -> {
@@ -438,7 +433,7 @@ public class Client extends Application {
 		});
 		bidField.setTextFormatter(formatter);
 		Button bidButton = new Button("Place bid");
-		bidButton.setPrefHeight(35);
+		bidButton.setPrefHeight(45);
 		Label bidErrorMessage = new Label();
 		bidErrorMessage.setStyle("-fx-text-fill: red");
 		HBox controllerRow2 = new HBox(5, bidInstruction, bidField, bidButton, bidErrorMessage);
@@ -507,7 +502,8 @@ public class Client extends Application {
 			public void run() {
 				while (!sessionDone) { // while the itemView has nodes added to it, keep queuing commands to update the client's itemList
 					if (itemMenu.getValue() == null) {
-						addItemButton.setDisable(true); 
+						addItemButton.setDisable(true);
+						removeItemButton.setDisable(true);
 						bidField.setDisable(true);
 						bidButton.setDisable(true);
 					}
@@ -520,6 +516,13 @@ public class Client extends Application {
 						else {
 							bidButton.setDisable(false);
 						}
+					}
+					
+					if (watchlistItemNames.isEmpty() || watchlistItems.isEmpty() || !watchlistItemNames.contains(itemMenu.getValue())) {
+						removeItemButton.setDisable(true);
+					}
+					else {
+						removeItemButton.setDisable(false);
 					}
 				}
 			}
@@ -586,7 +589,12 @@ public class Client extends Application {
 					while (!soldMessageQueue.isEmpty()) {
 						String soldMessage = soldMessageQueue.remove();
 						Platform.runLater(() -> {
-							sellWindow.getItems().add(soldMessage.replace(username, "you"));
+							if (soldMessage.contains(username)) {
+								sellWindow.getItems().add(soldMessage.replace(username, "you"));
+								buySoundPlayer.seek(Duration.ZERO);
+								buySoundPlayer.play();
+							}
+							
 						});
 					}
 					while (!bidMessageQueue.isEmpty()) {
@@ -598,7 +606,7 @@ public class Client extends Application {
 					try {
 						Thread.sleep(100);
 					} catch (InterruptedException e) {
-						System.out.println("Update alert window thread interrupted.");
+						System.out.println("Update alert window GUI thread interrupted.");
 					}
 				}
 			}
@@ -620,14 +628,8 @@ public class Client extends Application {
 			clickSoundPlayer.seek(Duration.ZERO);
 			clickSoundPlayer.play();
 		});
-		if (itemMenu.getContextMenu() != null) {
-			itemMenu.getContextMenu().setOnAction(e -> {
-				clickSoundPlayer.seek(Duration.ZERO);
-				clickSoundPlayer.play();
-			});
-		}
 		// add item button-handler
-		addItemButton.setOnAction(new EventHandler<ActionEvent>() { // add-item button handler and use lambda expression instead of EventHandler
+		addItemButton.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
 				String chosenItemName = itemMenu.getValue();
@@ -668,6 +670,7 @@ public class Client extends Application {
 					VBox.setMargin(soldInfo, new Insets(2, 0, 2, 0));
 					Separator itemDivider = new Separator();
 					VBox itemNode = new VBox(2, itemNameLabel, itemDescription, itemInfoBox, itemDivider);
+					itemNode.setId(chosenItemName);
 					itemView.getItems().add(itemNode);
 					watchlistItemNames.add(chosenItemName);
 					watchlistItems.add(chosenItem);
@@ -675,6 +678,24 @@ public class Client extends Application {
 				}
 				else { // else, item is already in watchlist window
 					addItemErrorMessage.setText("ERROR! " + chosenItemName + " is already added to the watchlist.");
+					errorSoundPlayer.seek(Duration.ZERO);
+					errorSoundPlayer.play();
+				}
+			}
+		});
+		// remove item button-handler
+		removeItemButton.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				String chosenItemName = itemMenu.getValue();
+				if (watchlistItemNames.remove(chosenItemName) && watchlistItems.removeIf(n -> (n.name.contentEquals(chosenItemName))) && watchlistInfoNodes.removeIf(n -> (n.getKey().equals(chosenItemName)))) { // item currently in the watchlist
+					removeSoundPlayer.seek(Duration.ZERO);
+					removeSoundPlayer.play();
+					itemView.getItems().removeIf(n -> (n.getId().equals(chosenItemName)));
+					clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
+				}
+				else { // else, item is not in watchlist window (SECOND LAYER OF ERROR CHECKING, THE REMOVE BUTTON SHOULD ALREADY DISABLED IF SELECTED ITEM NOT IN WATCHLIST)
+					addItemErrorMessage.setText("ERROR! " + chosenItemName + " is not in the watchlist.");
 					errorSoundPlayer.seek(Duration.ZERO);
 					errorSoundPlayer.play();
 				}
@@ -710,8 +731,6 @@ public class Client extends Application {
 							clickSoundPlayer.play();
 							if (userBid >= item.buyNowPrice) {
 								sendToServer("updateBidPrice|" + chosenItemName + "|" + String.valueOf(userBid) + "|" + username);
-								buySoundPlayer.seek(Duration.ZERO);
-								buySoundPlayer.play();
 								bidErrorMessage.setText("BOUGHT ITEM SUCCESSFULLY!");
 								bidField.clear();
 							}
@@ -737,11 +756,10 @@ public class Client extends Application {
 				// try to set flags so that all the helper threads finish executing
 				sessionDone = true;
 				for (Thread t : activeThreadList) {
-//					System.out.println("Auction background thread name: " + t.getName());
 				    try {
 						t.join();
 					} catch (InterruptedException e) {
-						System.out.println("Java FX Application Thread interrupted while waiting for background threads to join.");
+						System.out.println("Java FX Application Thread interrupted while waiting for background threads to join after a session has ended.");
 					}
 				}
 				
@@ -792,9 +810,9 @@ public class Client extends Application {
 	    try {
 	    	socket = new Socket(hostIP, 4242);
 	    } catch (IOException e) {
-	    	System.out.println("Error generating socket to server.");
+	    	System.out.println("Error generating socket connection to server.");
 	    }
-	    System.out.println("Connecting to server... " + socket);
+	    System.out.println("Connecting to server" + " through " + socket);
 	    toServer = new PrintWriter(socket.getOutputStream());
 	    fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 	    
@@ -813,7 +831,7 @@ public class Client extends Application {
 	    				}
 	    			}
 	    		} catch (Exception e) {
-	    			System.out.println("readerThread threw an Exception when getting input from the 'fromServer' stream.");
+	    			System.out.println("readerThread threw an Exception when reading the 'fromServer' input stream.");
 	    			e.printStackTrace();
 	    		}
 	    	}
@@ -843,7 +861,7 @@ public class Client extends Application {
 	 * @param string, represents the command to send to the server
 	 */
     private static void sendToServer(String string) {
-    	System.out.println("Sending to server: " + string); // uncomment this to see commands sent to the server
+//    	System.out.println("Sending to server: " + string); // uncomment this to see commands sent to the server
     	toServer.println(string);
     	toServer.flush();
     }
