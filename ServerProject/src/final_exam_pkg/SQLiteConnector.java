@@ -27,7 +27,7 @@ class SQLiteConnector {
 	 */
     protected Connection connect() {
         // SQLite database connection string with relative pathname
-    	// NOTE: itemDatabase MUST be in resource folder under the Server project
+    	// NOTE: itemDatabase MUST be in final_exam_pkg in src folder of the Server project
     	String url = "jdbc:sqlite::resource:final_exam_pkg/itemDatabase.db"; // USE THIS LINE INSTEAD OF THE LINE BELOW IF RUNNING PROGRAM ON ECLIPSE
     	
     	

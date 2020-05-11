@@ -135,41 +135,7 @@ public class Client extends Application {
 	 * 
 	 */
 	public void initializeMediaPlayers() {
-		// Load music files and initialize media players
-		
-//		String loginSoundFile = "src/final_exam_pkg/loginSound.wav";
-//		Media loginSound = new Media(new File(loginSoundFile).toURI().toString());
-//		loginSoundPlayer = new MediaPlayer(loginSound);
-		
-//		String quitSoundFile = "src/final_exam_pkg/quitSound.wav";
-//		Media quitSound = new Media(new File(quitSoundFile).toURI().toString());
-//		quitSoundPlayer = new MediaPlayer(quitSound);
-		
-//		String errorSoundFile = "src/final_exam_pkg/errorSound.wav";
-//		Media errorSound = new Media(new File(errorSoundFile).toURI().toString());
-//		errorSoundPlayer = new MediaPlayer(errorSound);
-		
-//		String menuClickSoundFile = "src/final_exam_pkg/menuClickSound.wav";
-//		Media menuClickSound = new Media(new File(menuClickSoundFile).toURI().toString());
-//		clickSoundPlayer = new MediaPlayer(menuClickSound);
-		
-//		String addSoundFile = "src/final_exam_pkg/addSound.wav";
-//		Media addSound = new Media(new File(addSoundFile).toURI().toString());
-//		addSoundPlayer = new MediaPlayer(addSound);
-		
-//		String removeSoundFile = "src/final_exam_pkg/removeSound.wav";
-//		Media removeSound = new Media(new File(removeSoundFile).toURI().toString());
-//		removeSoundPlayer = new MediaPlayer(removeSound);
-		
-//		String buySoundFile = "src/final_exam_pkg/buySound.wav";
-//		Media buySound = new Media(new File(buySoundFile).toURI().toString());
-//		buySoundPlayer = new MediaPlayer(buySound);
-		
-//		String bidSoundFile = "src/final_exam_pkg/bidSound.wav";
-//		Media bidSound = new Media(new File(bidSoundFile).toURI().toString());
-//		bidSoundPlayer = new MediaPlayer(bidSound);
-		
-		
+		// Load music files and initialize media players using classloader 
 		Media loginSound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/loginSound.wav").toString());
 		loginSoundPlayer = new MediaPlayer(loginSound);
 		Media quitSound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/quitSound.wav").toString());
