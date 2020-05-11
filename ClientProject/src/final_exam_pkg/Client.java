@@ -81,6 +81,7 @@ public class Client extends Application {
 	private static HashSet<String> watchlistItemNames = new HashSet<String>();
 	private static ArrayList<Item> watchlistItems = new ArrayList<Item>();
 	private static ArrayList<Pair<String, VBox>> watchlistInfoNodes = new ArrayList<Pair<String, VBox>>();
+	private static Object watchlistLock = new Object();
 	private static boolean isItemListUpdated = false;
 	private static boolean sessionDone = false;
 	private static ArrayList<Thread> activeThreadList = new ArrayList<Thread>();
@@ -102,6 +103,7 @@ public class Client extends Application {
 		watchlistItemNames = new HashSet<String>();
 		watchlistItems = new ArrayList<Item>();
 		watchlistInfoNodes  = new ArrayList<Pair<String, VBox>>();
+		watchlistLock = new Object();
 		isItemListUpdated = false;
 		sessionDone = false;
 		activeThreadList  = new ArrayList<Thread>();
@@ -436,15 +438,17 @@ public class Client extends Application {
 			if (!bidField.getText().isEmpty()) {
 				String itemName = itemMenu.getValue();
 				Double bidValue = Double.parseDouble(bidField.getText());
-				for (Item item : watchlistItems) {
-					if (item.name.contentEquals(itemName)) {
-						if (bidValue >= item.buyNowPrice) {
-							bidButton.setText("Buy Item Now");
+				synchronized (watchlistLock) {
+					for (Item item : watchlistItems) {
+						if (item.name.contentEquals(itemName)) {
+							if (bidValue >= item.buyNowPrice) {
+								bidButton.setText("Buy Item Now");
+							}
+							else {
+								bidButton.setText("Place Bid");
+							}
+							break;
 						}
-						else {
-							bidButton.setText("Place Bid");
-						}
-						break;
 					}
 				}
 			}
@@ -523,43 +527,45 @@ public class Client extends Application {
 			@Override
 			public void run() {
 				while (!sessionDone) {
-					for (Pair<String, VBox> nodePair : watchlistInfoNodes) {
-						String itemName = nodePair.getKey();
-						VBox itemNode = nodePair.getValue();
-						VBox itemInfoBox = (VBox) itemNode.lookup("#itemInfoBox");
-						HBox itemInfoHBox = (HBox) itemInfoBox.getChildren().get(0);
-						Label itemBidInfo = (Label) itemInfoHBox.lookup("#itemBidInfo");
-						Label itemTimeInfo = (Label) itemInfoHBox.lookup("#itemTimeInfo");
-						Label soldInfo = (Label) itemInfoBox.lookup("#soldInfo");
-						for (Item item : watchlistItems) {
-							if (itemName.contentEquals(item.name)) {
-								BigDecimal bigDecimalDuration = item.duration;
-								int wholePart = bigDecimalDuration.intValue();
-								int hours = wholePart / 60;
-								int minutes = wholePart % 60;
-								BigDecimal decimalPart = bigDecimalDuration.subtract(new BigDecimal(wholePart));
-								int seconds = (decimalPart.multiply((new BigDecimal(60)))).intValue();
-								String hoursString =String.format("%02d", hours);
-								String minutesString = String.format("%02d", minutes);
-								String secondsString = String.format("%02d", seconds);
-								
-								Platform.runLater(() -> {
-									String currentBidString = "$" + MONEY_FORMATTER.format(item.currentBidPrice);
-									if (item.currentBidPrice == 0.00) {
-										currentBidString = "N/A";
-									}
-									itemBidInfo.setText("Minimum Bidding Price: $" + MONEY_FORMATTER.format(item.minPrice) + "  Current Bid: " + currentBidString + "  Highest Bidder: " + item.highestBidderUsername + "  Buy now for: $" + MONEY_FORMATTER.format(item.buyNowPrice));
-									if (bigDecimalDuration.compareTo(TEN_SECONDS) == -1) {
-										itemTimeInfo.setStyle("-fx-text-fill: red; -fx-font-size: 13px");
-									}
-									itemTimeInfo.setText("  Time left: " + hoursString + ":" + minutesString + ":" + secondsString);
-									if (!item.soldMessage.contentEquals("Item is up for sale")) {
-										soldInfo.setText(item.soldMessage);
-									}
-									if (bigDecimalDuration.compareTo(BigDecimal.ZERO) == 0) {
-										itemNode.setDisable(true);
-									}
-								});
+					synchronized(watchlistLock) {
+						for (Pair<String, VBox> nodePair : watchlistInfoNodes) {
+							String itemName = nodePair.getKey();
+							VBox itemNode = nodePair.getValue();
+							VBox itemInfoBox = (VBox) itemNode.lookup("#itemInfoBox");
+							HBox itemInfoHBox = (HBox) itemInfoBox.getChildren().get(0);
+							Label itemBidInfo = (Label) itemInfoHBox.lookup("#itemBidInfo");
+							Label itemTimeInfo = (Label) itemInfoHBox.lookup("#itemTimeInfo");
+							Label soldInfo = (Label) itemInfoBox.lookup("#soldInfo");
+							for (Item item : watchlistItems) {
+								if (itemName.contentEquals(item.name)) {
+									BigDecimal bigDecimalDuration = item.duration;
+									int wholePart = bigDecimalDuration.intValue();
+									int hours = wholePart / 60;
+									int minutes = wholePart % 60;
+									BigDecimal decimalPart = bigDecimalDuration.subtract(new BigDecimal(wholePart));
+									int seconds = (decimalPart.multiply((new BigDecimal(60)))).intValue();
+									String hoursString =String.format("%02d", hours);
+									String minutesString = String.format("%02d", minutes);
+									String secondsString = String.format("%02d", seconds);
+									
+									Platform.runLater(() -> {
+										String currentBidString = "$" + MONEY_FORMATTER.format(item.currentBidPrice);
+										if (item.currentBidPrice == 0.00) {
+											currentBidString = "N/A";
+										}
+										itemBidInfo.setText("Minimum Bidding Price: $" + MONEY_FORMATTER.format(item.minPrice) + "  Current Bid: " + currentBidString + "  Highest Bidder: " + item.highestBidderUsername + "  Buy now for: $" + MONEY_FORMATTER.format(item.buyNowPrice));
+										if (bigDecimalDuration.compareTo(TEN_SECONDS) == -1) {
+											itemTimeInfo.setStyle("-fx-text-fill: red; -fx-font-size: 13px");
+										}
+										itemTimeInfo.setText("  Time left: " + hoursString + ":" + minutesString + ":" + secondsString);
+										if (!item.soldMessage.contentEquals("Item is up for sale")) {
+											soldInfo.setText(item.soldMessage);
+										}
+										if (bigDecimalDuration.compareTo(BigDecimal.ZERO) == 0) {
+											itemNode.setDisable(true);
+										}
+									});
+								}
 							}
 						}
 					}
@@ -682,16 +688,18 @@ public class Client extends Application {
 			@Override
 			public void handle(ActionEvent event) {
 				String chosenItemName = itemMenu.getValue();
-				if (watchlistItemNames.remove(chosenItemName) && watchlistItems.removeIf(n -> (n.name.contentEquals(chosenItemName))) && watchlistInfoNodes.removeIf(n -> (n.getKey().equals(chosenItemName)))) { // item currently in the watchlist
-					removeSoundPlayer.seek(Duration.ZERO);
-					removeSoundPlayer.play();
-					itemView.getItems().removeIf(n -> (n.getId().equals(chosenItemName)));
-					clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
-				}
-				else { // else, item is not in watchlist window (SECOND LAYER OF ERROR CHECKING, THE REMOVE BUTTON SHOULD ALREADY DISABLED IF SELECTED ITEM NOT IN WATCHLIST)
-					addItemErrorMessage.setText("ERROR! " + chosenItemName + " is not in the watchlist.");
-					errorSoundPlayer.seek(Duration.ZERO);
-					errorSoundPlayer.play();
+				synchronized (watchlistLock) {
+					if (watchlistItemNames.remove(chosenItemName) && watchlistItems.removeIf(n -> (n.name.contentEquals(chosenItemName))) && watchlistInfoNodes.removeIf(n -> (n.getKey().equals(chosenItemName)))) { // item currently in the watchlist
+						removeSoundPlayer.seek(Duration.ZERO);
+						removeSoundPlayer.play();
+						itemView.getItems().removeIf(n -> (n.getId().equals(chosenItemName)));
+						clearAuctionErrorMessages(addItemErrorMessage, bidErrorMessage);
+					}
+					else { // else, item is not in watchlist window (SECOND LAYER OF ERROR CHECKING, THE REMOVE BUTTON SHOULD ALREADY DISABLED IF SELECTED ITEM NOT IN WATCHLIST)
+						addItemErrorMessage.setText("ERROR! " + chosenItemName + " is not in the watchlist.");
+						errorSoundPlayer.seek(Duration.ZERO);
+						errorSoundPlayer.play();
+					}
 				}
 			}
 		});
