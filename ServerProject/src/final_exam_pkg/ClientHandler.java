@@ -9,17 +9,13 @@ package final_exam_pkg;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Observer;
-
-import java.util.ArrayList;
 import java.util.Observable;
 
-class ClientHandler extends Server implements Runnable, Observer {
+class ClientHandler implements Runnable, Observer {
 	private Server server;
 	protected Socket clientSocket;
 	protected BufferedReader fromClient;

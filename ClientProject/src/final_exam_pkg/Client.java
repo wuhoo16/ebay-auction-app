@@ -53,8 +53,8 @@ import java.text.DecimalFormat;
 
 public class Client extends Application {
 	// constant data fields
-	private static final double MAX_WIDTH = Screen.getPrimary().getBounds().getMaxX();
-	private static final double MAX_HEIGHT = Screen.getPrimary().getBounds().getMaxY();
+//	private static final double MAX_WIDTH = Screen.getPrimary().getBounds().getMaxX();
+//	private static final double MAX_HEIGHT = Screen.getPrimary().getBounds().getMaxY();
 	private static final DecimalFormat MONEY_FORMATTER = new DecimalFormat("#.00");
 	private static final BigDecimal TEN_SECONDS = new BigDecimal(0.175);
 	
@@ -136,29 +136,55 @@ public class Client extends Application {
 	 */
 	public void initializeMediaPlayers() {
 		// Load music files and initialize media players
-		String loginSoundFile = "src/final_exam_pkg/loginSound.wav";
-		Media loginSound = new Media(new File(loginSoundFile).toURI().toString());
+		
+//		String loginSoundFile = "src/final_exam_pkg/loginSound.wav";
+//		Media loginSound = new Media(new File(loginSoundFile).toURI().toString());
+//		loginSoundPlayer = new MediaPlayer(loginSound);
+		
+//		String quitSoundFile = "src/final_exam_pkg/quitSound.wav";
+//		Media quitSound = new Media(new File(quitSoundFile).toURI().toString());
+//		quitSoundPlayer = new MediaPlayer(quitSound);
+		
+//		String errorSoundFile = "src/final_exam_pkg/errorSound.wav";
+//		Media errorSound = new Media(new File(errorSoundFile).toURI().toString());
+//		errorSoundPlayer = new MediaPlayer(errorSound);
+		
+//		String menuClickSoundFile = "src/final_exam_pkg/menuClickSound.wav";
+//		Media menuClickSound = new Media(new File(menuClickSoundFile).toURI().toString());
+//		clickSoundPlayer = new MediaPlayer(menuClickSound);
+		
+//		String addSoundFile = "src/final_exam_pkg/addSound.wav";
+//		Media addSound = new Media(new File(addSoundFile).toURI().toString());
+//		addSoundPlayer = new MediaPlayer(addSound);
+		
+//		String removeSoundFile = "src/final_exam_pkg/removeSound.wav";
+//		Media removeSound = new Media(new File(removeSoundFile).toURI().toString());
+//		removeSoundPlayer = new MediaPlayer(removeSound);
+		
+//		String buySoundFile = "src/final_exam_pkg/buySound.wav";
+//		Media buySound = new Media(new File(buySoundFile).toURI().toString());
+//		buySoundPlayer = new MediaPlayer(buySound);
+		
+//		String bidSoundFile = "src/final_exam_pkg/bidSound.wav";
+//		Media bidSound = new Media(new File(bidSoundFile).toURI().toString());
+//		bidSoundPlayer = new MediaPlayer(bidSound);
+		
+		
+		Media loginSound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/loginSound.wav").toString());
 		loginSoundPlayer = new MediaPlayer(loginSound);
-		String quitSoundFile = "src/final_exam_pkg/quitSound.wav";
-		Media quitSound = new Media(new File(quitSoundFile).toURI().toString());
+		Media quitSound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/quitSound.wav").toString());
 		quitSoundPlayer = new MediaPlayer(quitSound);
-		String errorSoundFile = "src/final_exam_pkg/errorSound.wav";
-		Media errorSound = new Media(new File(errorSoundFile).toURI().toString());
+		Media errorSound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/errorSound.wav").toString());
 		errorSoundPlayer = new MediaPlayer(errorSound);
-		String menuClickSoundFile = "src/final_exam_pkg/menuClickSound.wav";
-		Media menuClickSound = new Media(new File(menuClickSoundFile).toURI().toString());
+		Media menuClickSound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/menuClickSound.wav").toString());
 		clickSoundPlayer = new MediaPlayer(menuClickSound);
-		String addSoundFile = "src/final_exam_pkg/addSound.wav";
-		Media addSound = new Media(new File(addSoundFile).toURI().toString());
+		Media addSound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/addSound.wav").toString());
 		addSoundPlayer = new MediaPlayer(addSound);
-		String removeSoundFile = "src/final_exam_pkg/removeSound.wav";
-		Media removeSound = new Media(new File(removeSoundFile).toURI().toString());
+		Media removeSound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/removeSound.wav").toString());
 		removeSoundPlayer = new MediaPlayer(removeSound);
-		String buySoundFile = "src/final_exam_pkg/buySound.wav";
-		Media buySound = new Media(new File(buySoundFile).toURI().toString());
+		Media buySound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/buySound.wav").toString());
 		buySoundPlayer = new MediaPlayer(buySound);
-		String bidSoundFile = "src/final_exam_pkg/bidSound.wav";
-		Media bidSound = new Media(new File(bidSoundFile).toURI().toString());
+		Media bidSound = new Media(getClass().getClassLoader().getResource("final_exam_pkg/bidSound.wav").toString());
 		bidSoundPlayer = new MediaPlayer(bidSound);
 	}
 	
@@ -378,7 +404,6 @@ public class Client extends Application {
 	
 	
 	
-	
 	// AUCTION PAGE LOGIC BELOW
 	/**
 	 * Generate all FX nodes in the auction page and return this newly generated Scene.
@@ -572,8 +597,8 @@ public class Client extends Application {
 							}
 						}
 					}
-					try { // let other threads run for 50 ms intervals before updating GUI
-						Thread.sleep(50);
+					try { // let other threads run for 100 ms intervals before updating GUI
+						Thread.sleep(100);
 					} 
 					catch (InterruptedException e) {
 						e.printStackTrace();
@@ -594,6 +619,9 @@ public class Client extends Application {
 								buySoundPlayer.seek(Duration.ZERO);
 								buySoundPlayer.play();
 							}
+							else {
+								sellWindow.getItems().add(soldMessage);
+							}
 							
 						});
 					}
@@ -604,7 +632,7 @@ public class Client extends Application {
 						});
 					}
 					try {
-						Thread.sleep(100);
+						Thread.sleep(200);
 					} catch (InterruptedException e) {
 						System.out.println("Update alert window GUI thread interrupted.");
 					}
@@ -779,7 +807,7 @@ public class Client extends Application {
 		
 		
 		// create and return newly initialized auction Scene
-		Scene auctionScene = new Scene(grid, MAX_WIDTH, MAX_HEIGHT);
+		Scene auctionScene = new Scene(grid, Screen.getPrimary().getBounds().getMaxX(), Screen.getPrimary().getBounds().getMaxY());
 		return auctionScene;
 	}
 	

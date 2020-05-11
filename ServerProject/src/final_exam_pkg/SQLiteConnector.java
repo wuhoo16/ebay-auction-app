@@ -15,7 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-class SQLiteConnecter {
+class SQLiteConnector {
 	private ArrayList<Item> itemList = new ArrayList<Item>(); 
     
 	/**
@@ -27,8 +27,10 @@ class SQLiteConnecter {
 	 */
     protected Connection connect() {
         // SQLite database connection string with relative pathname
-    	// NOTE: itemDatabase MUST be in the same package as this SQLiteConnector class file
-    	String url = "jdbc:sqlite:src/final_exam_pkg/itemDatabase.db";
+    	// NOTE: itemDatabase MUST be in resource folder under the Server project
+    	String url = "jdbc:sqlite::resource:final_exam_pkg/itemDatabase.db"; // USE THIS LINE INSTEAD OF THE LINE BELOW IF RUNNING PROGRAM ON ECLIPSE
+    	
+    	
         Connection connection = null;
         try {
         	connection = DriverManager.getConnection(url);

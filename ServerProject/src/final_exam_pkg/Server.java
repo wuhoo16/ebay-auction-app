@@ -19,7 +19,7 @@ import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 
-class Server extends Observable {
+public class Server extends Observable {
 	// data fields:
 	final static BigDecimal ONE_SECOND = new BigDecimal(1.0).divide(new BigDecimal(60.0), 100, RoundingMode.HALF_UP);
 	private Integer numClients = 0;
@@ -58,7 +58,7 @@ class Server extends Observable {
 	 * Expects the SQLiteConnector method getAllDatabaseItems to correctly return an arraylist of the items.
 	 */
 	private void initializeServerListsFromDatabase() {
-    	SQLiteConnecter SQLDatabaseReader = new SQLiteConnecter();
+    	SQLiteConnector SQLDatabaseReader = new SQLiteConnector();
     	SQLDatabaseReader.connect();
     	itemList.addAll(SQLDatabaseReader.getAllDatabaseItems());
     	activeItemList.addAll(itemList);
